@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/matthewdeanmartin/python_for_the_win/internal/platform"
+	"github.com/matthewdeanmartin/python_for_the_win/internal/resolve"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/state"
 )
 
@@ -37,8 +39,8 @@ func tree(t *testing.T, root string) map[string][32]byte {
 func TestDryRunLeavesFilesystemUntouched(t *testing.T) {
 	root := t.TempDir()
 	s := state.New()
-	s.Default = "3.14-64"
-	_ = s.Set(s.Default, state.Install{Version: "3.14.7", Arch: "amd64", Dir: "versions/3.14-64", Pip: true})
+	s.Default = "3.14-" + resolve.Suffix(platform.NativeArch()) // "default 3.14" resolves for the native architecture.
+	_ = s.Set(s.Default, state.Install{Version: "3.14.7", Arch: platform.NativeArch(), Dir: "versions/" + s.Default, Pip: true})
 	if e := s.Save(root); e != nil {
 		t.Fatal(e)
 	}

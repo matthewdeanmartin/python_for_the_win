@@ -8,6 +8,7 @@ import (
 
 	"github.com/matthewdeanmartin/python_for_the_win/internal/envpath"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/platform"
+	"github.com/matthewdeanmartin/python_for_the_win/internal/resolve"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/state"
 )
 
@@ -17,8 +18,8 @@ func TestRepairPreservesForeignAndExistingFiles(t *testing.T) {
 	_ = os.MkdirAll(dir, 0700)
 	_ = os.WriteFile(filepath.Join(dir, "pftw.exe"), []byte("manager"), 0700)
 	s := state.New()
-	s.Default = "3.15-64"
-	_ = s.Set(s.Default, state.Install{Dir: "versions/3.15-64", Arch: "amd64", Version: "3.15.0"})
+	s.Default = "3.15-" + resolve.Suffix(platform.NativeArch()) // python3.15.exe exists only for native installs.
+	_ = s.Set(s.Default, state.Install{Dir: "versions/" + s.Default, Arch: platform.NativeArch(), Version: "3.15.0"})
 	_ = state.Write(dir, "owned.json", []string{"python3.15.exe", "python3.exe"})
 	foreign := filepath.Join(dir, "python3.exe")
 	_ = os.WriteFile(foreign, []byte("foreign replacement"), 0700)

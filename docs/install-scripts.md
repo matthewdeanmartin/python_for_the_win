@@ -53,7 +53,8 @@ pftw's exit code is passed through. See [scripting](scripting.md).
 
 ## Safety
 
-- Piping a script into a shell runs whatever that URL serves at that moment. To pin it, use a release tag
+- Piping a script into a shell runs whatever that URL serves at that moment
+  ([planned fix](TODO.md#pin-the-one-line-install-scripts-to-releases)). To pin it, use a release tag
   in the URL instead of `main` (for example `.../python_for_the_win/v0.3.0/install.ps1`) and set `PFTW_VERSION`.
   The scripts are also attached to each GitHub release.
 - To read before running: download the script, look at it, then run it

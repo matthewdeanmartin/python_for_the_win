@@ -13,6 +13,7 @@ The [main README](../README.md) covers the default install. Everything here is o
 | [PyPI package](pypi.md) | install pftw with pip, or build and publish the wheels |
 | [One-line install scripts](install-scripts.md) | install with one pasted line in PowerShell or Git Bash, pin a version, or use a mirror |
 | [Development](development.md) | build, test or release pftw itself |
+| [TODO](TODO.md) | see planned follow-ups, such as pinning the install scripts to releases |
 
 ## Known limitations
 

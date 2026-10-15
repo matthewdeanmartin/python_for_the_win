@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Terminal advanced-info hints appear only when usable and are removed when the wizard exits.
 - Installation roots below a symlinked folder (such as macOS /var or a redirected Windows profile folder) are accepted; links inside the root are still refused.
 - `make lint` checks Windows, Linux and macOS code, so OS-specific files are linted locally as in CI.
+- Tests no longer assume an x64 machine; they pass on Apple Silicon and ARM Windows.
 
 ### Changed
 - Available versions select the most recent usable binary; unsupported entries explain exact reasons.
