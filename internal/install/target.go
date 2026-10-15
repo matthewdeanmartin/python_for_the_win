@@ -2,6 +2,8 @@ package install
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/archive"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/errs"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/feed"
@@ -12,8 +14,11 @@ import (
 
 // Target extracts the verified payload without installing pip or manager metadata.
 // The parent must exist. The destination is exclusively created and never adopted.
-func (m *Manager) Target(ctx context.Context, entry feed.Entry, target string) error {
-	target, err := filepath.Abs(target)
+func (m *Manager) Target(ctx context.Context, entry feed.Entry, target string) (err error) {
+	if err = ctx.Err(); err != nil {
+		return err
+	}
+	target, err = filepath.Abs(target)
 	if err != nil {
 		return err
 	}
@@ -28,7 +33,11 @@ func (m *Manager) Target(ctx context.Context, entry feed.Entry, target string) e
 	if err != nil {
 		return err
 	}
-	defer func() { _ = layout.Remove(parent, filepath.Base(work)) }()
+	defer func() {
+		if e := layout.Remove(parent, filepath.Base(work)); e != nil {
+			err = errors.Join(err, fmt.Errorf("remove temporary target files %s: %w", work, e))
+		}
+	}()
 	payload, err := m.Download.Fetch(ctx, entry.URL, entry.Hash["sha256"], work)
 	if err != nil {
 		return err
@@ -55,7 +64,9 @@ func (m *Manager) Target(ctx context.Context, entry feed.Entry, target string) e
 	complete := false
 	defer func() {
 		if !complete {
-			_ = layout.Remove(parent, filepath.Base(target))
+			if e := layout.Remove(parent, filepath.Base(target)); e != nil {
+				err = errors.Join(err, fmt.Errorf("remove incomplete target %s: %w", target, e))
+			}
 		}
 	}()
 	if err = archive.Extract(payload, target); err != nil {

@@ -23,7 +23,7 @@ func launchLine(exe, command string) (int, error) {
 	if e != nil {
 		return 0, e
 	}
-	defer windows.CloseHandle(job)
+	defer func(h windows.Handle) { _ = windows.CloseHandle(h) }(job) // Release owned OS handle.
 	limits := windows.JOBOBJECT_EXTENDED_LIMIT_INFORMATION{}
 	limits.BasicLimitInformation.LimitFlags = windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
 	if _, e = windows.SetInformationJobObject(job, windows.JobObjectExtendedLimitInformation, uintptr(unsafe.Pointer(&limits)), uint32(unsafe.Sizeof(limits))); e != nil {
@@ -52,14 +52,14 @@ func launchLine(exe, command string) (int, error) {
 		if e != nil {
 			return 0, e
 		}
-		defer windows.CloseHandle(*handles[i])
+		defer func(h windows.Handle) { _ = windows.CloseHandle(h) }(*handles[i]) // Release owned OS handle.
 	}
 	var pi windows.ProcessInformation
 	if e = windows.CreateProcess(app, line, nil, nil, true, windows.CREATE_SUSPENDED, nil, nil, &si, &pi); e != nil {
 		return 0, e
 	}
-	defer windows.CloseHandle(pi.Process)
-	defer windows.CloseHandle(pi.Thread)
+	defer func(h windows.Handle) { _ = windows.CloseHandle(h) }(pi.Process) // Release owned OS handle.
+	defer func(h windows.Handle) { _ = windows.CloseHandle(h) }(pi.Thread)  // Release owned OS handle.
 	if e = windows.AssignProcessToJobObject(job, pi.Process); e != nil {
 		_ = windows.TerminateProcess(pi.Process, 1)
 		return 0, e
@@ -72,8 +72,8 @@ func launchLine(exe, command string) (int, error) {
 		return 0
 	})
 	ctrl := windows.NewLazySystemDLL("kernel32.dll").NewProc("SetConsoleCtrlHandler")
-	ctrl.Call(handler, 1)
-	defer ctrl.Call(handler, 0)
+	_, _, _ = ctrl.Call(handler, 1)                    // A windowed process may have no console handler to register.
+	defer func() { _, _, _ = ctrl.Call(handler, 0) }() // Best-effort OS resource release.
 	if _, e = windows.ResumeThread(pi.Thread); e != nil {
 		return 0, e
 	}

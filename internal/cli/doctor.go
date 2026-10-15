@@ -125,16 +125,28 @@ func (o *options) doctor(c *cobra.Command) error {
 	if o.json {
 		return o.output(c, map[string]any{"root": o.root, "source": source, "portable": s.Portable(), "checks": checks}, "")
 	}
-	fmt.Fprintln(c.OutOrStdout(), "Root:", o.root)
-	fmt.Fprintln(c.OutOrStdout(), "Source:", source)
+	if _, err := fmt.Fprintln(c.OutOrStdout(), "Root:", o.root); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(c.OutOrStdout(), "Source:", source); err != nil {
+		return err
+	}
 	for _, check := range checks {
-		fmt.Fprintf(c.OutOrStdout(), "%s: %s", check.Status, check.Title)
-		if check.Detail != "" {
-			fmt.Fprintf(c.OutOrStdout(), " â€” %s", check.Detail)
+		if _, err := fmt.Fprintf(c.OutOrStdout(), "%s: %s", check.Status, check.Title); err != nil {
+			return err
 		}
-		fmt.Fprintln(c.OutOrStdout())
+		if check.Detail != "" {
+			if _, err := fmt.Fprintf(c.OutOrStdout(), " â€” %s", check.Detail); err != nil {
+				return err
+			}
+		}
+		if _, err := fmt.Fprintln(c.OutOrStdout()); err != nil {
+			return err
+		}
 		if check.Fix != "" {
-			fmt.Fprintln(c.OutOrStdout(), "  "+check.Fix)
+			if _, err := fmt.Fprintln(c.OutOrStdout(), "  "+check.Fix); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

@@ -31,7 +31,9 @@ func (o *options) doctorFix(c *cobra.Command) error {
 		}
 		return o.output(c, map[string]any{"dry_run": o.dryRun, "repairs": changes}, strings.Join(changes, "\n"))
 	}
-	fmt.Fprintln(c.OutOrStdout(), "Repairs:\n"+strings.Join(changes, "\n"))
+	if _, err := fmt.Fprintln(c.OutOrStdout(), "Repairs:\n"+strings.Join(changes, "\n")); err != nil {
+		return err
+	}
 	return o.mutate(c, func(s *state.State, _ *install.Manager) error { _, _, e := o.repairs(s, true); return e })
 }
 

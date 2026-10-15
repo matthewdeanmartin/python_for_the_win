@@ -31,7 +31,7 @@ func Inspect(path string) (*Info, error) {
 	if e != nil {
 		return nil, e
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // Read-only handle; read errors are checked above.
 	stat, e := f.Stat()
 	if e != nil {
 		return nil, e
@@ -165,7 +165,7 @@ func Base(path string) (io.ReadCloser, int64, error) {
 	}
 	stat, e := f.Stat()
 	if e != nil {
-		f.Close()
+		_ = f.Close() // Read-only or already-failed operation; preserve the primary error.
 		return nil, 0, e
 	}
 	size := stat.Size()
@@ -179,7 +179,7 @@ func Write(out io.Writer, exe, archive string) error {
 	if e != nil {
 		return e
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }() // Read-only handle; read errors are checked above.
 	header := make([]byte, 2)
 	if _, e = io.ReadFull(in, header); e != nil {
 		return e
@@ -197,7 +197,7 @@ func Write(out io.Writer, exe, archive string) error {
 	if e != nil {
 		return e
 	}
-	defer z.Close()
+	defer func() { _ = z.Close() }() // Read-only handle; read errors are checked above.
 	h := sha256.New()
 	size, e := io.Copy(io.MultiWriter(out, h), io.LimitReader(z, maxArchive+1))
 	if e != nil {

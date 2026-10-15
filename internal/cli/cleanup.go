@@ -123,7 +123,9 @@ func (o *options) removeManager(c *cobra.Command) error {
 		}
 	}
 	if pending && !o.quiet {
-		fmt.Fprintln(c.ErrOrStderr(), "The root contains foreign files or files still in use; they were left in place.")
+		if _, err := fmt.Fprintln(c.ErrOrStderr(), "The root contains foreign files or files still in use; they were left in place."); err != nil {
+			return err
+		}
 	}
 	return nil
 }

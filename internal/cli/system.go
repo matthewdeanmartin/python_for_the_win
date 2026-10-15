@@ -63,7 +63,9 @@ func (o *options) choosePath(c *cobra.Command, s *state.State) (string, error) {
 		if o.path == "first" || !o.interactive() {
 			return "", errs.New(4, "Another Python is on system PATH. Pass --path none to explicitly install without changing which Python runs.")
 		}
-		fmt.Fprint(c.ErrOrStderr(), "Another Python will still run. Continue installing without changing PATH? [y/N]: ")
+		if _, err := fmt.Fprint(c.ErrOrStderr(), "Another Python will still run. Continue installing without changing PATH? [y/N]: "); err != nil {
+			return "", err
+		}
 		line, e := bufio.NewReader(c.InOrStdin()).ReadString('\n')
 		if e != nil {
 			return "", errs.New(4, "No decision received; nothing installed")
@@ -81,7 +83,9 @@ func (o *options) choosePath(c *cobra.Command, s *state.State) (string, error) {
 	}
 	reader := bufio.NewReader(c.InOrStdin())
 	for {
-		fmt.Fprint(c.ErrOrStderr(), "Another Python is on user PATH. Choose 1: put pftw first, or 2: install without PATH changes: ")
+		if _, err := fmt.Fprint(c.ErrOrStderr(), "Another Python is on user PATH. Choose 1: put pftw first, or 2: install without PATH changes: "); err != nil {
+			return "", err
+		}
 		line, e := reader.ReadString('\n')
 		if e != nil {
 			return "", errs.New(4, "No decision received")
@@ -111,9 +115,13 @@ func (o *options) sync(c *cobra.Command, s *state.State, enable bool) error {
 func (o *options) checks(c *cobra.Command, checks []preflight.Check) error {
 	for _, check := range checks {
 		if check.Status == "Block" || check.Status == "Warn" || o.verbose {
-			fmt.Fprintf(c.ErrOrStderr(), "%s: %s\n", check.Status, check.Title)
+			if _, err := fmt.Fprintf(c.ErrOrStderr(), "%s: %s\n", check.Status, check.Title); err != nil {
+				return err
+			}
 			if o.verbose && check.Detail != "" {
-				fmt.Fprintln(c.ErrOrStderr(), check.Detail)
+				if _, err := fmt.Fprintln(c.ErrOrStderr(), check.Detail); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -181,13 +189,19 @@ func (o *options) chooseReplacement(c *cobra.Command, s *state.State, removed []
 	if len(remaining) == 0 {
 		return "", nil
 	}
-	fmt.Fprintln(c.ErrOrStderr(), "Choose which installed Python becomes the default:")
+	if _, err := fmt.Fprintln(c.ErrOrStderr(), "Choose which installed Python becomes the default:"); err != nil {
+		return "", err
+	}
 	for i, k := range remaining {
-		fmt.Fprintf(c.ErrOrStderr(), "  %d: %s\n", i+1, k)
+		if _, err := fmt.Fprintf(c.ErrOrStderr(), "  %d: %s\n", i+1, k); err != nil {
+			return "", err
+		}
 	}
 	reader := bufio.NewReader(c.InOrStdin())
 	for {
-		fmt.Fprint(c.ErrOrStderr(), "Selection: ")
+		if _, err := fmt.Fprint(c.ErrOrStderr(), "Selection: "); err != nil {
+			return "", err
+		}
 		line, e := reader.ReadString('\n')
 		if e != nil {
 			return "", errs.New(4, "No replacement default selected; nothing removed")

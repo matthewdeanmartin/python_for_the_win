@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/matthewdeanmartin/python_for_the_win/internal/errs"
@@ -67,9 +68,14 @@ func (o *options) runCommand() *cobra.Command {
 		if errors.As(e, &coded) && coded.Code == 9 && selected.Spec != "" {
 			consent := installMissing
 			if !consent && o.interactive() {
-				fmt.Fprint(c.ErrOrStderr(), e.Error()+". Install it now? [y/N]: ")
-				line, _ := bufio.NewReader(c.InOrStdin()).ReadString('\n')
-				consent = strings.EqualFold(strings.TrimSpace(line), "y") || strings.EqualFold(strings.TrimSpace(line), "yes")
+				if _, err := fmt.Fprint(c.ErrOrStderr(), e.Error()+". Install it now? [y/N]: "); err != nil {
+					return err
+				}
+				var readErr error
+				consent, readErr = readInstallConsent(c.InOrStdin())
+				if readErr != nil {
+					return readErr
+				}
 			}
 			if consent {
 				spec := selected.Spec
@@ -129,7 +135,9 @@ func (o *options) runCommand() *cobra.Command {
 			return e
 		}
 		if selected.Dependencies {
-			fmt.Fprintln(c.ErrOrStderr(), "pftw run doesn't install dependencies; use a venv or a tool like uv/pipx")
+			if _, err := fmt.Fprintln(c.ErrOrStderr(), "pftw run doesn't install dependencies; use a venv or a tool like uv/pipx"); err != nil {
+				return err
+			}
 		}
 		if o.dryRun {
 			return o.output(c, map[string]any{"dry_run": true, "interpreter": selected.Interpreter, "reason": selected.Reason, "argv": append([]string{selected.Interpreter}, selected.Args...)}, fmt.Sprintf("Interpreter: %s\nSelected by: %s\nArgv: %q\nNo files or settings changed; Python was not started.", selected.Interpreter, selected.Reason, append([]string{selected.Interpreter}, selected.Args...)))
@@ -144,4 +152,13 @@ func (o *options) runCommand() *cobra.Command {
 		return nil
 	}
 	return c
+}
+
+// A truncated reply is not consent, even if its partial contents say yes.
+func readInstallConsent(r io.Reader) (bool, error) {
+	line, err := bufio.NewReader(r).ReadString(10)
+	if err != nil {
+		return false, errs.Wrap(4, "No complete decision received; nothing installed", err)
+	}
+	return strings.EqualFold(strings.TrimSpace(line), "y") || strings.EqualFold(strings.TrimSpace(line), "yes"), nil
 }

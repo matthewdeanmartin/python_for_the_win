@@ -22,7 +22,7 @@ func Lock(root string) (func(), error) {
 		return nil, e
 	}
 	if e = unix.Flock(int(f.Fd()), unix.LOCK_EX|unix.LOCK_NB); e != nil {
-		f.Close()
+		_ = f.Close() // Preserve the lock acquisition failure.
 		return nil, fmt.Errorf("another pftw is running: %w", e)
 	}
 	return func() { _ = unix.Flock(int(f.Fd()), unix.LOCK_UN); _ = f.Close() }, nil

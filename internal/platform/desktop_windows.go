@@ -18,7 +18,7 @@ func DesktopLaunch() bool {
 	if err != nil {
 		return false
 	}
-	defer windows.CloseHandle(snapshot)
+	defer func(h windows.Handle) { _ = windows.CloseHandle(h) }(snapshot) // Release owned OS handle.
 	entry := windows.ProcessEntry32{Size: uint32(unsafe.Sizeof(windows.ProcessEntry32{}))}
 	parents := map[uint32]uint32{}
 	names := map[uint32]string{}

@@ -3,6 +3,7 @@ package cli
 import (
 	"archive/zip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/overlay"
 	"io"
@@ -20,7 +21,7 @@ func (o *options) bundleCommand() *cobra.Command {
 	var out string
 	c := &cobra.Command{Use: "bundle SPEC --out FILE.zip|FILE.exe", Short: "Create a verified offline installation bundle", Args: cobra.ExactArgs(1)}
 	c.Flags().StringVar(&out, "out", "", "New output ZIP or EXE path (will not overwrite an existing file)")
-	c.RunE = func(c *cobra.Command, args []string) error {
+	c.RunE = func(c *cobra.Command, args []string) (resultErr error) {
 		executable := strings.EqualFold(filepath.Ext(out), ".exe")
 		if out == "" || (!executable && !strings.EqualFold(filepath.Ext(out), ".zip")) {
 			return errs.New(2, "--out must name a new .zip or .exe file")
@@ -61,7 +62,11 @@ func (o *options) bundleCommand() *cobra.Command {
 		if e != nil {
 			return e
 		}
-		defer os.RemoveAll(work)
+		defer func() {
+			if cleanupErr := os.RemoveAll(work); cleanupErr != nil {
+				resultErr = errors.Join(resultErr, fmt.Errorf("temporary directory cleanup: %w", cleanupErr))
+			}
+		}()
 		payload, e := d.Fetch(c.Context(), v.URL, v.Hash["sha256"], work)
 		if e != nil {
 			return e
@@ -80,7 +85,7 @@ func (o *options) bundleCommand() *cobra.Command {
 			if e != nil {
 				return e
 			}
-			defer in.Close()
+			defer func() { _ = in.Close() }() // Read-only handle; read errors are checked above.
 			w, e := z.Create(name)
 			if e != nil {
 				return e
@@ -98,7 +103,7 @@ func (o *options) bundleCommand() *cobra.Command {
 				r, _, err := overlay.Open(companion)
 				if err == nil {
 					available = true
-					r.Close()
+					_ = r.Close() // Read-only or already-failed operation; preserve the primary error.
 				}
 			} else {
 				_, err := os.Stat(companion)
@@ -149,7 +154,7 @@ func (o *options) bundleCommand() *cobra.Command {
 		if e != nil {
 			return e
 		}
-		defer in.Close()
+		defer func() { _ = in.Close() }() // Read-only handle; read errors are checked above.
 		if executable {
 			e = overlay.Write(dest, self, staged)
 		} else {

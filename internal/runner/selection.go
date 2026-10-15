@@ -48,7 +48,7 @@ func selectInterpreter(root string, s *state.State, explicit string, args []stri
 		if e != nil {
 			return result, e
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }() // Read-only handle; read errors are checked above.
 		reader := bufio.NewReaderSize(f, 1025)
 		lineBytes, e := reader.ReadSlice('\n')
 		if e != nil && e != io.EOF && e != bufio.ErrBufferFull {
@@ -210,8 +210,9 @@ func selectInterpreter(root string, s *state.State, explicit string, args []stri
 	if e != nil {
 		return result, e
 	}
-	if _, e = os.Stat(result.Interpreter); e != nil {
-		return result, errs.New(9, "Python %s is registered but missing at %s", key, result.Interpreter)
+	info, statErr := os.Stat(result.Interpreter)
+	if statErr != nil || !info.Mode().IsRegular() {
+		return result, errs.New(9, "Python %s is registered but not a regular interpreter file at %s", key, result.Interpreter)
 	}
 	return result, nil
 }

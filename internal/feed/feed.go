@@ -185,7 +185,7 @@ func (i *Iterator) Next(ctx context.Context) ([]Entry, error) {
 			return nil, errs.Wrap(5, "cannot read Python index", err)
 		}
 		data, e = io.ReadAll(io.LimitReader(r, (16<<20)+1))
-		r.Close()
+		_ = r.Close() // Read-only or already-failed operation; preserve the primary error.
 		if e != nil {
 			return nil, e
 		}

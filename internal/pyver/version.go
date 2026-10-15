@@ -18,13 +18,20 @@ func Parse(s string) (Version, error) {
 	if m == nil {
 		return Version{}, fmt.Errorf("invalid Python version %q", s)
 	}
+	var err error
 	v := Version{Major: 3, Stage: 3, Parts: 1, Threaded: m[6] != ""}
 	if m[2] != "" {
-		v.Minor, _ = strconv.Atoi(m[2])
+		v.Minor, err = strconv.Atoi(m[2])
+		if err != nil {
+			return Version{}, fmt.Errorf("invalid Python version %q: %w", s, err)
+		}
 		v.Parts = 2
 	}
 	if m[3] != "" {
-		v.Patch, _ = strconv.Atoi(m[3])
+		v.Patch, err = strconv.Atoi(m[3])
+		if err != nil {
+			return Version{}, fmt.Errorf("invalid Python version %q: %w", s, err)
+		}
 		v.Parts = 3
 	}
 	if m[4] != "" {
@@ -32,7 +39,10 @@ func Parse(s string) (Version, error) {
 			return v, fmt.Errorf("prerelease needs a full version")
 		}
 		v.Stage = map[string]int{"a": 0, "b": 1, "rc": 2}[m[4]]
-		v.Serial, _ = strconv.Atoi(m[5])
+		v.Serial, err = strconv.Atoi(m[5])
+		if err != nil {
+			return Version{}, fmt.Errorf("invalid Python version %q: %w", s, err)
+		}
 	}
 	return v, nil
 }

@@ -61,7 +61,7 @@ func (Native) IsAppExecLink(path string) (bool, error) {
 	if e != nil {
 		return false, e
 	}
-	defer windows.CloseHandle(h)
+	defer func(h windows.Handle) { _ = windows.CloseHandle(h) }(h) // Release owned OS handle.
 	var b [16384]byte
 	var n uint32
 	e = windows.DeviceIoControl(h, windows.FSCTL_GET_REPARSE_POINT, nil, 0, &b[0], uint32(len(b)), &n, nil)

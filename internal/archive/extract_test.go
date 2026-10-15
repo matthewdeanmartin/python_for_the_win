@@ -57,3 +57,47 @@ func TestExtract(t *testing.T) {
 		t.Fatal(e, string(b))
 	}
 }
+
+func TestDeviceNamesExactMatch(t *testing.T) {
+	for _, name := range []string{"COM12.txt", "LPT123.py", "COM10", "LPT0"} {
+		if e := SafeName(name); e != nil {
+			t.Errorf("valid name %s rejected: %v", name, e)
+		}
+	}
+	for _, name := range []string{"COM¹.txt", "LPT².py", "COM3", "AUX.txt"} {
+		if e := SafeName(name); e == nil {
+			t.Errorf("device accepted: %s", name)
+		}
+	}
+}
+func FuzzSafeName(f *testing.F) {
+	for _, s := range []string{"../x", "Lib/site.py", "CON", "a:b", "a/../b", "COM12.txt"} {
+		f.Add(s)
+	}
+	f.Fuzz(func(t *testing.T, s string) {
+		if SafeName(s) == nil && (filepath.IsAbs(s) || s == "") {
+			t.Fatalf("unsafe accepted: %q", s)
+		}
+	})
+}
+
+func TestExtractionPreservesExistingFiles(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "python.exe")
+	if e := os.WriteFile(file, []byte("foreign"), 0600); e != nil {
+		t.Fatal(e)
+	}
+	if e := Extract(makeZip(t, []string{"python.exe"}, false), root); e == nil {
+		t.Fatal("overwrote existing file")
+	}
+	b, e := os.ReadFile(file)
+	if e != nil || string(b) != "foreign" {
+		t.Fatal(string(b), e)
+	}
+}
+
+func TestRejectInvalidUTF8Name(t *testing.T) {
+	if e := SafeName(string([]byte{0xff}) + ".py"); e == nil {
+		t.Fatal("accepted a name Windows would replace during UTF-16 conversion")
+	}
+}

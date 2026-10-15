@@ -21,7 +21,7 @@ func Lock(root string) (func(), error) {
 	}
 	o := new(windows.Overlapped)
 	if e = windows.LockFileEx(windows.Handle(f.Fd()), windows.LOCKFILE_EXCLUSIVE_LOCK|windows.LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, o); e != nil {
-		f.Close()
+		_ = f.Close() // Read-only or already-failed operation; preserve the primary error.
 		return nil, fmt.Errorf("another pftw is running (or lock unavailable): %w", e)
 	}
 	return func() { _ = windows.UnlockFileEx(windows.Handle(f.Fd()), 0, 1, 0, o); _ = f.Close() }, nil

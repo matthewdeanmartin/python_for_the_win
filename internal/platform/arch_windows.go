@@ -31,7 +31,7 @@ func NativeArch() string {
 		Count, Type, Granularity uint32
 		Level, Revision          uint16
 	}
-	k.NewProc("GetNativeSystemInfo").Call(uintptr(unsafe.Pointer(&info)))
+	_, _, _ = k.NewProc("GetNativeSystemInfo").Call(uintptr(unsafe.Pointer(&info))) // Notification/void OS API; no transactional result.
 	switch info.Arch {
 	case 9:
 		return "amd64"

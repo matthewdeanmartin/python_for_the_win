@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -19,7 +20,7 @@ func (o *options) mirrorCommand() *cobra.Command {
 	var out string
 	c := &cobra.Command{Use: "mirror SPEC [SPEC...] --out DIRECTORY", Short: "Create a self-hostable index and verified runtime ZIPs", Args: cobra.MinimumNArgs(1)}
 	c.Flags().StringVar(&out, "out", "", "New directory; existing directories are never overwritten")
-	c.RunE = func(c *cobra.Command, args []string) error {
+	c.RunE = func(c *cobra.Command, args []string) (resultErr error) {
 		if out == "" {
 			return errs.New(2, "mirror requires --out DIRECTORY")
 		}
@@ -68,7 +69,11 @@ func (o *options) mirrorCommand() *cobra.Command {
 		if e != nil {
 			return e
 		}
-		defer os.RemoveAll(work)
+		defer func() {
+			if cleanupErr := os.RemoveAll(work); cleanupErr != nil {
+				resultErr = errors.Join(resultErr, fmt.Errorf("temporary directory cleanup: %w", cleanupErr))
+			}
+		}()
 		payloads := map[string]string{}
 		for i, v := range selected {
 			p, e := d.Fetch(c.Context(), v.URL, v.Hash["sha256"], work)
@@ -118,7 +123,7 @@ func (o *options) mirrorCommand() *cobra.Command {
 				return e
 			}
 			e = write(name, f)
-			f.Close()
+			_ = f.Close() // Read-only or already-failed operation; preserve the primary error.
 			if e != nil {
 				return e
 			}

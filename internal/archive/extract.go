@@ -11,11 +11,12 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 func SafeName(name string) error {
 	n := strings.ReplaceAll(name, `\`, "/")
-	if n == "" || strings.HasPrefix(n, "/") {
+	if !utf8.ValidString(n) || n == "" || strings.HasPrefix(n, "/") {
 		return fmt.Errorf("absolute or empty archive path")
 	}
 	for _, s := range strings.Split(strings.TrimSuffix(n, "/"), "/") {
@@ -31,7 +32,7 @@ func SafeName(name string) error {
 		if base == "CON" || base == "PRN" || base == "AUX" || base == "NUL" || base == "CONIN$" || base == "CONOUT$" {
 			return fmt.Errorf("reserved archive name %q", s)
 		}
-		if len(base) >= 4 && (strings.HasPrefix(base, "COM") || strings.HasPrefix(base, "LPT")) && strings.Contains("123456789¹²³", base[3:]) {
+		if len(base) >= 4 && len([]rune(base[3:])) == 1 && (strings.HasPrefix(base, "COM") || strings.HasPrefix(base, "LPT")) && strings.Contains("123456789¹²³", base[3:]) {
 			return fmt.Errorf("reserved archive name %q", s)
 		}
 	}
@@ -49,7 +50,7 @@ func extract(path, dest string) error {
 	if e != nil {
 		return e
 	}
-	defer z.Close()
+	defer func() { _ = z.Close() }() // Read-only handle; read errors are checked above.
 	if len(z.File) > 100000 {
 		return fmt.Errorf("too many archive entries")
 	}
@@ -94,7 +95,7 @@ func extract(path, dest string) error {
 		}
 		w, e := os.OpenFile(target, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600|f.Mode().Perm()&0111)
 		if e != nil {
-			r.Close()
+			_ = r.Close() // Read-only or already-failed operation; preserve the primary error.
 			return e
 		}
 		_, e = io.Copy(w, io.LimitReader(r, int64(f.UncompressedSize64)+1))
@@ -102,7 +103,7 @@ func extract(path, dest string) error {
 			e = w.Sync()
 		}
 		ce := w.Close()
-		r.Close()
+		_ = r.Close() // Read-only or already-failed operation; preserve the primary error.
 		if e != nil {
 			return e
 		}

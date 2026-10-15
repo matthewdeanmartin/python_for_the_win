@@ -36,7 +36,7 @@ func syncWindowed(root, self string) (string, error) {
 	if e != nil {
 		return "", e
 	}
-	r.Close()
+	_ = r.Close() // Read-only or already-failed operation; preserve the primary error.
 
 	if strings.EqualFold(filepath.Clean(source), filepath.Clean(dest)) {
 		if _, e = os.Stat(marker); e != nil {
@@ -67,7 +67,7 @@ func syncWindowed(root, self string) (string, error) {
 	if e = copyFile(source, dest+".new"); e != nil {
 		return "", e
 	}
-	defer os.Remove(dest + ".new")
+	defer func() { _ = os.Remove(dest + ".new") }() // Best-effort scratch removal; replacement/recovery owns durable state.
 	if e = state.Write(filepath.Dir(dest), "windowed-owned.json", map[string]bool{"owned": true}); e != nil {
 		return "", e
 	}

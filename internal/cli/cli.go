@@ -171,7 +171,9 @@ func (o *options) output(c *cobra.Command, value any, message string) error {
 		return json.NewEncoder(c.OutOrStdout()).Encode(value)
 	}
 	if !o.quiet {
-		fmt.Fprintln(c.OutOrStdout(), message)
+		if _, err := fmt.Fprintln(c.OutOrStdout(), message); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -278,7 +280,7 @@ func (o *options) mutate(c *cobra.Command, fn func(*state.State, *install.Manage
 			o.step(s)
 		}
 		if !o.quiet {
-			fmt.Fprintln(c.ErrOrStderr(), s)
+			_, _ = fmt.Fprintln(c.ErrOrStderr(), s) // Progress is best effort; command results use checked output.
 		}
 	}}
 	e = fn(s, m)
@@ -338,10 +340,14 @@ func (o *options) install(c *cobra.Command, a []string) error {
 		}
 		pv, _ := pyver.Parse(v.Version)
 		if pv.Pre() {
-			fmt.Fprintf(c.ErrOrStderr(), "Development release: Python %s (explicit version selection).\n", v.Version)
+			if _, err := fmt.Fprintf(c.ErrOrStderr(), "Development release: Python %s (explicit version selection).\n", v.Version); err != nil {
+				return err
+			}
 		}
 		if o.source != "" && source != feed.DefaultSource {
-			fmt.Fprintln(c.ErrOrStderr(), "Whoever controls the source controls what gets installed.")
+			if _, err := fmt.Fprintln(c.ErrOrStderr(), "Whoever controls the source controls what gets installed."); err != nil {
+				return err
+			}
 		}
 		if !o.quiet && platform.IsTerminal(os.Stderr) {
 			last := -1
@@ -349,10 +355,10 @@ func (o *options) install(c *cobra.Command, a []string) error {
 				if total > 0 {
 					percent := int(done * 100 / total)
 					if percent != last {
-						fmt.Fprintf(c.ErrOrStderr(), "\rDownloading: %d%%", percent)
+						_, _ = fmt.Fprintf(c.ErrOrStderr(), "\rDownloading: %d%%", percent) // Progress is best effort; command results use checked output.
 						last = percent
 						if done == total {
-							fmt.Fprintln(c.ErrOrStderr())
+							_, _ = fmt.Fprintln(c.ErrOrStderr()) // Progress is best effort; command results use checked output.
 						}
 					}
 				}
@@ -402,7 +408,9 @@ func (o *options) list(c *cobra.Command) error {
 			return o.output(c, map[string]any{"source": src, "versions": availabilityJSON(v)}, "")
 		}
 		if src != feed.DefaultSource {
-			fmt.Fprintln(c.OutOrStdout(), "Source:", src)
+			if _, err := fmt.Fprintln(c.OutOrStdout(), "Source:", src); err != nil {
+				return err
+			}
 		}
 		for _, x := range v {
 			ver, _ := pyver.Parse(x.Version)
@@ -413,7 +421,9 @@ func (o *options) list(c *cobra.Command) error {
 			if !x.Installable() {
 				note += " unavailable: " + strings.Join(x.UnavailableReasons(), "; ")
 			}
-			fmt.Fprintf(c.OutOrStdout(), "%-18s %-15s%s\n", x.Key(), x.Version, note)
+			if _, err := fmt.Fprintf(c.OutOrStdout(), "%-18s %-15s%s\n", x.Key(), x.Version, note); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -421,7 +431,9 @@ func (o *options) list(c *cobra.Command) error {
 		return o.output(c, map[string]any{"source": source, "default": s.Default, "installs": s.Installs}, "")
 	}
 	if source != feed.DefaultSource {
-		fmt.Fprintln(c.OutOrStdout(), "Source:", source)
+		if _, err := fmt.Fprintln(c.OutOrStdout(), "Source:", source); err != nil {
+			return err
+		}
 	}
 	keys := []string{}
 	for k := range s.Installs {
@@ -437,10 +449,14 @@ func (o *options) list(c *cobra.Command) error {
 		if k == s.Default {
 			mark = "*"
 		}
-		fmt.Fprintf(c.OutOrStdout(), "%s %-18s %s\n", mark, k, v.Version)
+		if _, err := fmt.Fprintf(c.OutOrStdout(), "%s %-18s %s\n", mark, k, v.Version); err != nil {
+			return err
+		}
 	}
 	if len(keys) == 0 {
-		fmt.Fprintln(c.OutOrStdout(), "No Python versions installed by pftw.")
+		if _, err := fmt.Fprintln(c.OutOrStdout(), "No Python versions installed by pftw."); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -545,7 +561,9 @@ func (o *options) config(c *cobra.Command, a []string) error {
 					return e
 				}
 				if value != feed.DefaultSource {
-					fmt.Fprintln(c.ErrOrStderr(), "Whoever controls the source controls what gets installed.")
+					if _, err := fmt.Fprintln(c.ErrOrStderr(), "Whoever controls the source controls what gets installed."); err != nil {
+						return err
+					}
 				}
 			} else {
 				if _, e = download.New(value, o.insecure); e != nil {

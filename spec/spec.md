@@ -1,6 +1,6 @@
 # pftw — python-for-the-win: Specification
 
-Status: draft v0.2 (2026-10-15); Sprints 1–5 implemented; Sprint 6 code delivered for dogfooding, desktop/accessibility acceptance pending. Signing deferred until dogfooding is complete. Decisions below came out of a requirements interview with the project owner.
+Status: draft v0.2 (2026-10-15); Sprints 1–5 implemented; Sprint 6 code delivered for dogfooding; Sprint 7 quality hardening implemented with local validation. Desktop/accessibility acceptance remains pending. Signing deferred until dogfooding is complete. Decisions below came out of a requirements interview with the project owner.
 Implementation is planned in `spec/sprints/`.
 
 ## 1. Purpose
@@ -584,6 +584,7 @@ cleans staging/trash, and drops state entries whose dirs are gone (after confirm
 | 4 (implemented; local validation, hosted/manual acceptance pending) | Runner + offline | `pftw run` (7.2: shebang + PEP 723 selection), windowed `pythonw3.X` shims, `bundle` (zip), `doctor --fix`, Restart Manager process naming |
 | 5 (implemented locally; signing deferred by owner, hosted acceptance pending) | Polish | `bundle` executable overlay, SignPath signing handoff (unsigned until human onboarding), static system-proxy fallback, `pftw mirror` (write a self-hostable index + zips for chosen specs, the server side of D21) |
 | 6 (implemented for dogfooding; desktop/accessibility acceptance pending) | Gio GUI | One distributed Windows exe; desktop GUI / terminal TUI selection, explicit overrides, shared safe wizard flow, console/shim compatibility validation (8.1); `which`, plain `install --target`, `.python-version`, dependency security maintenance |
+| 7 (implemented; local checks, hosted CI pending) | Quality | Pinned Errcheck alongside Staticcheck; adversarial unit tests and bounded fuzzing; numeric parsing, state validation, output/prompt errors, cancellation and cleanup reporting; coverage report |
 | Optional future | Linux CI | python-build-standalone source, Linux layout, PATH via `GITHUB_PATH`/shell rc guidance, Docker docs |
 
 ## 17. Open questions (owner to decide; implementers use the stated default until then)

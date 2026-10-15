@@ -50,7 +50,7 @@ func copyPackages(root, source, target string) error {
 		if err != nil {
 			return err
 		}
-		defer in.Close()
+		defer func() { _ = in.Close() }() // Read-only handle; read errors are checked above.
 		out, err := os.OpenFile(dest, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode().Perm())
 		if err != nil {
 			return err

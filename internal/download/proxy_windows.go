@@ -14,7 +14,7 @@ func readStaticProxy() (StaticProxy, error) {
 	if e != nil {
 		return StaticProxy{}, e
 	}
-	defer k.Close()
+	defer func() { _ = k.Close() }() // Read-only handle; read errors are checked above.
 	enabled, _, e := k.GetIntegerValue("ProxyEnable")
 	if e != nil && !errors.Is(e, registry.ErrNotExist) {
 		return StaticProxy{}, e

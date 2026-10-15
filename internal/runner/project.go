@@ -17,7 +17,7 @@ func projectVersion(dir string) (string, error) {
 		f, err := os.Open(name)
 		if err == nil {
 			b, e := io.ReadAll(io.LimitReader(f, 4097))
-			f.Close()
+			_ = f.Close() // Read-only or already-failed operation; preserve the primary error.
 			if e != nil {
 				return "", e
 			}

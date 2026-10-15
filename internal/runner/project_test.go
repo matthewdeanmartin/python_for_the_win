@@ -62,3 +62,19 @@ func TestProjectLosesToScriptRequirements(t *testing.T) {
 		t.Fatal("accepted oversized file")
 	}
 }
+
+func TestRejectDirectoryInterpreter(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join("versions", "3.15-64")
+	if e := os.MkdirAll(filepath.Join(root, dir, "python.exe"), 0700); e != nil {
+		t.Fatal(e)
+	}
+	s := state.New()
+	s.Default = "3.15-64"
+	if e := s.Set(s.Default, state.Install{Version: "3.15.0", Dir: dir, Arch: "amd64"}); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := SelectInstalled(root, s, ""); e == nil {
+		t.Fatal("accepted directory interpreter")
+	}
+}

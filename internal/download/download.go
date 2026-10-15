@@ -46,6 +46,9 @@ func New(proxy string, insecure bool) (*Client, error) {
 	return &Client{HTTP: h, Insecure: insecure}, nil
 }
 func (c *Client) Open(ctx context.Context, source string) (io.ReadCloser, int64, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, 0, err
+	}
 	if strings.HasPrefix(source, overlay.Scheme+"://") {
 		r, n, e := overlay.Open(source)
 		if e != nil {
@@ -60,7 +63,7 @@ func (c *Client) Open(ctx context.Context, source string) (io.ReadCloser, int64,
 		}
 		i, e := f.Stat()
 		if e != nil {
-			f.Close()
+			_ = f.Close() // Read-only or already-failed operation; preserve the primary error.
 			return nil, 0, e
 		}
 		return f, i.Size(), nil
@@ -84,7 +87,7 @@ func (c *Client) Open(ctx context.Context, source string) (io.ReadCloser, int64,
 			if r.StatusCode == 200 {
 				return r.Body, r.ContentLength, nil
 			}
-			r.Body.Close()
+			_ = r.Body.Close() // Read-only or already-failed operation; preserve the primary error.
 			last = fmt.Errorf("HTTP %d", r.StatusCode)
 			if r.StatusCode < 500 {
 				break
@@ -108,7 +111,7 @@ func Matches(path, hash string) bool {
 	if e != nil {
 		return false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // Read-only handle; read errors are checked above.
 	h := sha256.New()
 	_, e = io.Copy(h, f)
 	return e == nil && strings.EqualFold(hex.EncodeToString(h.Sum(nil)), hash)
@@ -126,7 +129,10 @@ func (m *meter) Write(b []byte) (int, error) {
 	}
 	return len(b), nil
 }
-func (c *Client) Fetch(ctx context.Context, source, hash, cache string) (string, error) {
+func (c *Client) Fetch(ctx context.Context, source, hash, cache string) (path string, resultErr error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 	if !ValidHash(hash) {
 		return "", errs.Wrap(6, "missing or invalid sha256", ErrIntegrity)
 	}
@@ -148,15 +154,22 @@ func (c *Client) Fetch(ctx context.Context, source, hash, cache string) (string,
 		}
 		return "", errs.Wrap(5, "cannot read runtime", e)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }() // Read-only handle; read errors are checked above.
 	f, e := os.CreateTemp(cache, "download-*.part")
 	if e != nil {
 		return "", e
 	}
 	tmp := f.Name()
-	defer os.Remove(tmp)
+	defer func() {
+		if cleanupErr := os.Remove(tmp); cleanupErr != nil && !os.IsNotExist(cleanupErr) {
+			resultErr = errors.Join(resultErr, fmt.Errorf("remove partial download %s: %w", tmp, cleanupErr))
+		}
+	}()
 	h := sha256.New()
-	_, e = io.Copy(io.MultiWriter(f, h, &meter{total: total, f: c.Progress}), r)
+	_, e = io.Copy(io.MultiWriter(f, h, &meter{total: total, f: c.Progress}), contextReader{ctx: ctx, r: r})
+	if e == nil {
+		e = ctx.Err()
+	}
 	if e == nil {
 		e = f.Sync()
 	}
@@ -174,4 +187,17 @@ func (c *Client) Fetch(ctx context.Context, source, hash, cache string) (string,
 		return "", e
 	}
 	return dest, nil
+}
+
+// Local files and bundle streams need cancellation checks as well as HTTP bodies.
+type contextReader struct {
+	ctx context.Context
+	r   io.Reader
+}
+
+func (r contextReader) Read(p []byte) (int, error) {
+	if e := r.ctx.Err(); e != nil {
+		return 0, e
+	}
+	return r.r.Read(p)
 }

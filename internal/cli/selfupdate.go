@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/install"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/platform"
@@ -25,7 +26,7 @@ func (o *options) selfUpdate(c *cobra.Command, force bool) error {
 	if selfupdate.Scoop(self) {
 		return fmt.Errorf("use scoop update pftw")
 	}
-	return o.mutate(c, func(s *state.State, m *install.Manager) error {
+	return o.mutate(c, func(s *state.State, m *install.Manager) (resultErr error) {
 		d, _, e := o.client(s)
 		if e != nil {
 			return e
@@ -37,7 +38,11 @@ func (o *options) selfUpdate(c *cobra.Command, force bool) error {
 		if exe == "" {
 			return o.output(c, map[string]string{"version": version}, "Already up to date")
 		}
-		defer os.RemoveAll(filepath.Dir(exe))
+		defer func() {
+			if cleanupErr := os.RemoveAll(filepath.Dir(exe)); cleanupErr != nil {
+				resultErr = errors.Join(resultErr, fmt.Errorf("temporary directory cleanup: %w", cleanupErr))
+			}
+		}()
 		if e = shims.Sync(o.root, exe, s); e != nil {
 			return e
 		}

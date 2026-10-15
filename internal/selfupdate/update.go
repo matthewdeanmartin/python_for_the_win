@@ -50,7 +50,7 @@ func (c Client) read(ctx context.Context, url string, limit int64) ([]byte, erro
 		}
 		return nil, e
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }() // Read-only handle; read errors are checked above.
 	b, e := io.ReadAll(io.LimitReader(r, limit+1))
 	if e == nil && int64(len(b)) > limit {
 		e = fmt.Errorf("release metadata exceeds size limit")
@@ -178,7 +178,7 @@ func Replace(source, target string) error {
 	if e != nil {
 		return e
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }() // Read-only handle; read errors are checked above.
 	tmp, e := os.OpenFile(target+".new", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0700)
 	if e != nil {
 		return e
@@ -191,7 +191,7 @@ func Replace(source, target string) error {
 	if e == nil {
 		e = ce
 	}
-	defer os.Remove(target + ".new")
+	defer func() { _ = os.Remove(target + ".new") }() // Best-effort scratch removal; replacement/recovery owns durable state.
 	if e != nil {
 		return e
 	}

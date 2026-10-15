@@ -23,7 +23,7 @@ func (s RegistryStore) Get() (Value, error) {
 	if e != nil {
 		return Value{}, e
 	}
-	defer k.Close()
+	defer func() { _ = k.Close() }() // Registry handle release; query/write errors are checked at each operation.
 	text, kind, e := k.GetStringValue(s.ValueName)
 	if e == syscall.ERROR_FILE_NOT_FOUND {
 		return Value{Kind: registry.EXPAND_SZ}, nil
@@ -42,7 +42,7 @@ func (s RegistryStore) Set(v Value) error {
 	if e != nil {
 		return e
 	}
-	defer k.Close()
+	defer func() { _ = k.Close() }() // Registry handle release; query/write errors are checked at each operation.
 	if !v.Exists {
 		e = k.DeleteValue(s.ValueName)
 		if e == syscall.ERROR_FILE_NOT_FOUND {
@@ -64,7 +64,7 @@ func SystemPath() (Value, error) {
 func Broadcast() {
 	p, _ := windows.UTF16PtrFromString("Environment")
 	var result uintptr
-	windows.NewLazySystemDLL("user32.dll").NewProc("SendMessageTimeoutW").Call(0xffff, 0x1a, 0, uintptr(unsafe.Pointer(p)), 2, 5000, uintptr(unsafe.Pointer(&result)))
+	_, _, _ = windows.NewLazySystemDLL("user32.dll").NewProc("SendMessageTimeoutW").Call(0xffff, 0x1a, 0, uintptr(unsafe.Pointer(p)), 2, 5000, uintptr(unsafe.Pointer(&result))) // Notification/void OS API; no transactional result.
 }
 func Expand(s string) string {
 	p, e := windows.UTF16PtrFromString(s)

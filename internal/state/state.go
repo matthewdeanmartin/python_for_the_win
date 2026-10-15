@@ -68,6 +68,32 @@ func Load(root string) (*State, error) {
 	if s.Config == nil {
 		s.Config = map[string]json.RawMessage{}
 	}
+	if s.Default != "" && !layout.ValidKey(s.Default) {
+		return nil, fmt.Errorf("invalid default install key")
+	}
+	if b, ok := s.Raw["path"]; ok {
+		var path PathState
+		if e = json.Unmarshal(b, &path); e != nil {
+			return nil, fmt.Errorf("invalid path state: %w", e)
+		}
+		if path.Mode != "" && path.Mode != "first" && path.Mode != "none" {
+			return nil, fmt.Errorf("invalid PATH mode %q", path.Mode)
+		}
+	}
+	if b, ok := s.Raw["portable"]; ok {
+		var portable bool
+		if e = json.Unmarshal(b, &portable); e != nil {
+			return nil, fmt.Errorf("invalid portable state: %w", e)
+		}
+	}
+	for _, key := range []string{"source", "proxy"} {
+		if b, ok := s.Config[key]; ok {
+			var value string
+			if e = json.Unmarshal(b, &value); e != nil {
+				return nil, fmt.Errorf("invalid %s setting: %w", key, e)
+			}
+		}
+	}
 	for k := range s.Installs {
 		if !layout.ValidKey(k) {
 			return nil, fmt.Errorf("unsafe install key in state")
@@ -101,6 +127,9 @@ func (s *State) Set(k string, v Install) error {
 		if e := json.Unmarshal(old, &raw); e != nil {
 			return e
 		}
+	}
+	if raw == nil {
+		return fmt.Errorf("invalid null install entry")
 	}
 	b, e := json.Marshal(v)
 	if e != nil {

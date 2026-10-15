@@ -76,7 +76,7 @@ func digest(path string) ([32]byte, error) {
 	if e != nil {
 		return [32]byte{}, e
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // Read-only handle; read errors are checked above.
 	h := sha256.New()
 	_, e = io.Copy(h, f)
 	var sum [32]byte
@@ -88,7 +88,7 @@ func copyFile(src, dest string) error {
 	if e != nil {
 		return e
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }() // Read-only handle; read errors are checked above.
 	out, e := os.OpenFile(dest, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0700)
 	if e != nil {
 		return e

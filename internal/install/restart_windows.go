@@ -84,7 +84,7 @@ func lockingProcesses(err error) []string {
 	if code != 0 {
 		return nil
 	}
-	defer end.Call(uintptr(session))
+	defer func() { _, _, _ = end.Call(uintptr(session)) }() // Best-effort OS resource release.
 	code, _, _ = register.Call(uintptr(session), uintptr(len(files)), uintptr(unsafe.Pointer(&files[0])), 0, 0, 0, 0)
 	runtime.KeepAlive(files)
 	if code != 0 {
