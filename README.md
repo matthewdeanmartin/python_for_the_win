@@ -28,6 +28,23 @@ python -m pftw install
 
 Your old Python stays installed. See [more on this](docs/installing.md#already-have-python).
 
+### Prefer one line?
+
+PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/matthewdeanmartin/python_for_the_win/main/install.ps1 | iex
+```
+
+Git Bash:
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/matthewdeanmartin/python_for_the_win/main/install.sh | bash
+```
+
+These fetch pftw from PyPI, check it, and start the same installer. *(They work once pftw is on PyPI.)*
+[Details](docs/install-scripts.md).
+
 ## Usage
 
 Open a **new** terminal window, then:

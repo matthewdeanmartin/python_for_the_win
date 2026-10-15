@@ -36,12 +36,18 @@ archives:
         formats: [none]
 checksum:
   name_template: checksums.txt
+  extra_files: # The one-line install scripts, pinned to this release.
+    - glob: ./install.sh
+    - glob: ./install.ps1
 snapshot:
   version_template: '0.3.0-dev.{{ .ShortCommit }}'
 release:
   github:
     owner: matthewdeanmartin
     name: python_for_the_win
+  extra_files:
+    - glob: ./install.sh
+    - glob: ./install.ps1
   prerelease: auto
   header: |
     Windows installer manager. Linux/macOS artifacts are unsupported for installing Python.

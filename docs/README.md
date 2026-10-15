@@ -11,6 +11,7 @@ The [main README](../README.md) covers the default install. Everything here is o
 | [Command reference](cli.md) | see every command and flag (generated) |
 | [Accessibility status](accessibility.md) | know what the GUI and terminal wizards support today |
 | [PyPI package](pypi.md) | install pftw with pip, or build and publish the wheels |
+| [One-line install scripts](install-scripts.md) | install with one pasted line in PowerShell or Git Bash, pin a version, or use a mirror |
 | [Development](development.md) | build, test or release pftw itself |
 
 ## Known limitations

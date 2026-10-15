@@ -30,8 +30,11 @@ func Root(s string) (string, error) {
 	return filepath.Abs(s)
 }
 
-// Safe rejects symlinks/junctions in existing ancestors before managed filesystem operations.
+// Safe rejects symlinks/junctions from root down to the target before managed filesystem
+// operations, so nothing inside the root can redirect pftw's writes. Links above the root are
+// the user's own layout (macOS /var -> /private/var, redirected profile folders) and are allowed.
 func Safe(root string, parts ...string) (string, error) {
+	root = filepath.Clean(root)
 	target := filepath.Join(append([]string{root}, parts...)...)
 	rel, err := filepath.Rel(root, target)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
@@ -45,7 +48,7 @@ func Safe(root string, parts ...string) (string, error) {
 		if e != nil && !os.IsNotExist(e) {
 			return "", e
 		}
-		if filepath.Dir(p) == p {
+		if p == root || filepath.Dir(p) == p {
 			break
 		}
 	}

@@ -532,6 +532,11 @@ cleans staging/trash, and drops state entries whose dirs are gone (after confirm
   `Scripts` is not on PATH. The tool is still not Python. No sdist. A copy beside a `pftw-*.dist-info` in the
   environment's site-packages is pip-managed: `self-update` refuses (exit 3) and names the pip command. Publishing
   uses PyPI trusted publishing from an inactive workflow draft; a human configures and enables it (docs/pypi.md).
+- One-line bootstrap scripts (`install.sh` for Git Bash, `install.ps1` for Windows PowerShell 5.1/7) are
+  optional, separately distributed conveniences; pftw itself still never launches a shell. They read a PEP 503
+  index (PyPI by default), choose the newest non-yanked final wheel unless `PFTW_VERSION` is set, verify its
+  SHA-256 from the index, run the extracted `pftw.exe` from a temporary folder and delete it. They never edit
+  PATH: pftw's own consent and PATH store do that. Release assets include both scripts (docs/install-scripts.md).
 - `go install github.com/matthewdeanmartin/python_for_the_win/cmd/pftw@latest` must work. It does, because shims are
   the same binary (11.1). On first `install`, pftw copies itself to `shims\pftw.exe` if it's running from anywhere
   else.
