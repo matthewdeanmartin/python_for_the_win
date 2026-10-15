@@ -1,0 +1,5 @@
+ScoopInstaller/Scoop schema.json
+Source: https://raw.githubusercontent.com/ScoopInstaller/Scoop/master/schema.json
+Retrieved: 2026-10-15
+License: Unlicense (https://github.com/ScoopInstaller/Scoop/blob/master/LICENSE)
+Vendored for offline Go schema validation. Runtime executable does not use it.

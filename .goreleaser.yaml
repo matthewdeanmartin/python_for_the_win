@@ -1,0 +1,60 @@
+version: 2
+project_name: pftw
+dist: dist/release
+builds:
+  - id: pftw
+    main: ./cmd/pftw
+    binary: pftw
+    env: [CGO_ENABLED=0]
+    goos: [windows, linux, darwin]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X github.com/matthewdeanmartin/python_for_the_win/internal/cli.Version={{.Version}} -X github.com/matthewdeanmartin/python_for_the_win/internal/cli.Commit={{.Commit}} -X github.com/matthewdeanmartin/python_for_the_win/internal/cli.Date={{.Date}}
+  - id: pftww
+    main: ./cmd/pftww
+    binary: pftww
+    env: [CGO_ENABLED=0]
+    goos: [windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags: [-s -w -H windowsgui]
+archives:
+  - id: zip
+    allow_different_binary_count: true # Windows additionally includes the GUI-subsystem shim.
+    formats: [zip]
+    name_template: 'pftw_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    files: [LICENSE, README.md, CHANGELOG.md]
+  - id: raw
+    ids: [pftw]
+    formats: [binary]
+    name_template: 'pftw_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    format_overrides:
+      - goos: linux
+        formats: [none]
+      - goos: darwin
+        formats: [none]
+checksum:
+  name_template: checksums.txt
+snapshot:
+  version_template: '0.3.0-dev.{{ .ShortCommit }}'
+release:
+  github:
+    owner: matthewdeanmartin
+    name: python_for_the_win
+  prerelease: auto
+  header: |
+    Windows installer manager. Linux/macOS artifacts are unsupported for installing Python.
+    The Windows executables are currently unsigned. No py/pyw launcher or file associations are installed.
+scoops:
+  - name: pftw
+    skip_upload: true # Workflow enriches checkver/autoupdate, then commits this generated manifest.
+    ids: [zip]
+    directory: bucket
+    homepage: https://github.com/matthewdeanmartin/python_for_the_win
+    description: Install official Python without a system installer
+    license: MIT
+    repository:
+      owner: matthewdeanmartin
+      name: python_for_the_win
+      branch: main

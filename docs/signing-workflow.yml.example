@@ -1,0 +1,45 @@
+# Draft only: not an active workflow. Human SignPath onboarding is required.
+name: Signing rehearsal
+on: workflow_dispatch
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sign:
+    runs-on: windows-latest
+    environment: signing
+    defaults:
+      run:
+        shell: bash
+    env:
+      CGO_ENABLED: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.2'
+      - run: make test vet lint build
+      - uses: actions/upload-artifact@v4
+        id: unsigned
+        with:
+          name: unsigned-windows
+          path: |
+            dist/pftw.exe
+            dist/pftww.exe
+          if-no-files-found: error
+      - uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ vars.SIGNPATH_ORGANIZATION_ID }}'
+          project-slug: '${{ vars.SIGNPATH_PROJECT_SLUG }}'
+          signing-policy-slug: '${{ vars.SIGNPATH_POLICY_SLUG }}'
+          github-artifact-id: '${{ steps.unsigned.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: dist/signed
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-windows-rehearsal
+          path: dist/signed
+          if-no-files-found: error
+# No release upload or Scoop updates: inspect signatures before integrating signing
+# into release packaging. Pin reviewed action revisions before enabling this draft.

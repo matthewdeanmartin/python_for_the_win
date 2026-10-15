@@ -1,0 +1,64 @@
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      CGO_ENABLED: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.2'
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go build ./...
+      - run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+      - if: runner.os == 'Windows'
+        run: make build
+      - if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pftw-windows-amd64
+          path: |
+            dist/pftw.exe
+            dist/pftww.exe
+  integration:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      CGO_ENABLED: '0'
+      PFTW_INTEGRATION: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.2'
+      - run: go test -tags integration -timeout 10m ./...
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: v2.18.0
+          args: check
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: v2.18.0
+          args: release --snapshot --clean

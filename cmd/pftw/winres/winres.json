@@ -1,0 +1,26 @@
+{
+  "RT_MANIFEST": {
+    "#1": {
+      "0409": "pftw.manifest"
+    }
+  },
+  "RT_VERSION": {
+    "#1": {
+      "0000": {
+        "fixed": {
+          "file_version": "0.3.0.0",
+          "product_version": "0.3.0.0"
+        },
+        "info": {
+          "0409": {
+            "FileDescription": "Python for the Win",
+            "ProductName": "Python for the Win",
+            "OriginalFilename": "pftw.exe",
+            "FileVersion": "0.3.0",
+            "ProductVersion": "0.3.0"
+          }
+        }
+      }
+    }
+  }
+}
