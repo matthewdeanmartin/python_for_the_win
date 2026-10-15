@@ -5,16 +5,16 @@
         "pftww.exe",
         "pftw.exe"
       ],
-      "hash": "cc76d3e1355601697b0cf243a4627793939b0b02b0bbbcb2ae29f6fb91062ac7",
-      "url": "https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.0.0/pftw_0.3.0-dev.88e987e_windows_amd64.zip"
+      "hash": "5913fdf29aeca44700edb527bda6b42d43a66e60f637a49d578483cbe887c1ce",
+      "url": "https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.0.0/pftw_0.3.0-dev.77a6f05_windows_amd64.zip"
     },
     "arm64": {
       "bin": [
         "pftww.exe",
         "pftw.exe"
       ],
-      "hash": "9a9f861160cb7f5a2ebe7303950dfb6589c0e24c278f4f8c8dee0f00a4d13d1a",
-      "url": "https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.0.0/pftw_0.3.0-dev.88e987e_windows_arm64.zip"
+      "hash": "667096de2eb91ea9cd05ead2debf3f5dae8c39e105fbb0b5483d0dacfeaeba6c",
+      "url": "https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.0.0/pftw_0.3.0-dev.77a6f05_windows_arm64.zip"
     }
   },
   "autoupdate": {
@@ -37,6 +37,6 @@
   "description": "Install official Python without a system installer",
   "homepage": "https://github.com/matthewdeanmartin/python_for_the_win",
   "license": "MIT",
-  "version": "0.3.0-dev.88e987e",
+  "version": "0.3.0-dev.77a6f05",
   "notes": "Unpublished local snapshot: release URLs are placeholders until the first human release."
 }

@@ -33,7 +33,7 @@ both were fixed and received regression coverage before the successful smoke run
 
 ## Limits and remaining acceptance
 
-- Narrator/NVDA, Windows UI Automation, OS high-contrast themes and multi-monitor DPI acceptance are not verified. See [accessibility status](accessibility.md).
+- Narrator/NVDA, Windows UI Automation, OS high-contrast themes and multi-monitor DPI acceptance are not verified. See [accessibility status](../../docs/accessibility.md).
 - Ctrl+C uses the existing direct-process/job handling, but an interactive Ctrl+C test was not added in this sprint. The GUI close-during-install manual test remains pending.
 - Doctor repair deliberately does not reconstruct corrupt state, overwrite existing aliases, or delete missing-runtime records. Those cases require inspection.
 - Python requirement parsing rejects unsupported syntax rather than implementing every PEP 440 extension (for example development/post/local/epoch versions).

@@ -47,7 +47,7 @@ func TestDryRunLeavesFilesystemUntouched(t *testing.T) {
 		t.Fatal(e)
 	}
 	for _, args := range [][]string{
-		{"install", "3.15", "--path", "none"}, {"upgrade", "--all"}, {"uninstall", "--all"}, {"default", "3.14"},
+		{"install", "3.15", "--path", "none"}, {"install", "3.15", "--target", filepath.Join(root, "plain-python")}, {"upgrade", "--all"}, {"uninstall", "--all"}, {"default", "3.14"},
 		{"config", "set", "source", source}, {"config", "unset", "proxy"}, {"config", "get", "source"}, {"config", "list"},
 		{"doctor"}, {"doctor", "--fix"}, {"version"}, {"list"}, {"list", "--available"},
 		{"bundle", "3.15", "--out", filepath.Join(root, "offline.zip")},

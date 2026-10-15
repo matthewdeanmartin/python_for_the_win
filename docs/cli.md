@@ -14,12 +14,14 @@ pftw [flags]
       --allow-insecure-source   Allow HTTP sources (sha256 still required)
       --dry-mode                Alias for --dry-run
       --dry-run                 Report changes without writing files or settings
+      --gui                     Force the graphical wizard
       --json                    Emit JSON output
       --proxy string            HTTPS proxy URL
       --quiet                   Hide progress
       --refresh                 Bypass index cache
       --root string             Installation root (default: user AppData/pftw)
       --source string           Index URL, file, or directory
+      --tui                     Force the terminal wizard
       --verbose                 Show extra details
       --yes                     Accept non-decision prompts
 ```
@@ -150,14 +152,15 @@ pftw install [SPEC] [flags]
 ```
 
 ```text
-      --arch string    amd64, arm64, or x86 (default "amd64")
-      --freethreaded   Select free-threaded Python
-      --fresh          Omit existing packages when upgrading
-      --no-pip         Skip pip installation and verification
-      --path string    PATH policy: auto, first, or none (default "auto")
-      --portable       Contain files in --root and do not manage PATH
-      --prerelease     Allow development releases
-      --set-default    Make this runtime the default
+      --arch string     amd64, arm64, or x86 (default "amd64")
+      --freethreaded    Select free-threaded Python
+      --fresh           Omit existing packages when upgrading
+      --no-pip          Skip pip installation and verification
+      --path string     PATH policy: auto, first, or none (default "auto")
+      --portable        Contain files in --root and do not manage PATH
+      --prerelease      Allow development releases
+      --set-default     Make this runtime the default
+      --target string   Extract an unmanaged runtime into a new directory
       --allow-admin             Explicitly allow an elevated process
       --allow-insecure-source   Allow HTTP sources (sha256 still required)
       --dry-mode                Alias for --dry-run
@@ -328,6 +331,29 @@ Show build information
 
 ```text
 pftw version
+```
+
+```text
+      --allow-admin             Explicitly allow an elevated process
+      --allow-insecure-source   Allow HTTP sources (sha256 still required)
+      --dry-mode                Alias for --dry-run
+      --dry-run                 Report changes without writing files or settings
+      --json                    Emit JSON output
+      --proxy string            HTTPS proxy URL
+      --quiet                   Hide progress
+      --refresh                 Bypass index cache
+      --root string             Installation root (default: user AppData/pftw)
+      --source string           Index URL, file, or directory
+      --verbose                 Show extra details
+      --yes                     Accept non-decision prompts
+```
+
+## pftw which
+
+Print an installed interpreter path
+
+```text
+pftw which [SPEC]
 ```
 
 ```text

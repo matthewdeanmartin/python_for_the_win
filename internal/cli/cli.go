@@ -40,6 +40,7 @@ type options struct {
 	allowAdmin, portable, setDefaultFlag                                                        bool
 	dryRun                                                                                      bool
 	fresh, showUnavailable                                                                      bool
+	target                                                                                      string
 	root, source, proxy, arch, path                                                             string
 	yes, quiet, verbose, json, insecure, refresh, pre, threaded, noPip, all, available, allArch bool
 }
@@ -51,8 +52,25 @@ func New() *cobra.Command {
 func NewWith(info platform.Info, store envpath.Store, self string) *cobra.Command {
 	o := &options{info: info, store: store, self: self}
 	root := &cobra.Command{Use: "pftw", Short: "Install official Python without a system installer", SilenceUsage: true, SilenceErrors: true, RunE: func(c *cobra.Command, _ []string) error {
+		forceGUI, _ := c.Flags().GetBool("gui")
+		forceTUI, _ := c.Flags().GetBool("tui")
+		if forceGUI && forceTUI {
+			return errs.New(2, "--gui and --tui cannot be combined")
+		}
+		if forceGUI && (o.json || o.yes || o.quiet) {
+			return errs.New(2, "--gui is interactive; omit --json, --yes and --quiet")
+		}
+		if forceGUI && runtime.GOOS != "windows" {
+			return errs.New(8, "The graphical wizard is currently supported only on Windows")
+		}
 		if o.dryRun {
 			return errs.New(2, "Use an explicit command with --dry-run, such as install")
+		}
+		if graphicalRoot(c) {
+			return o.runWizard(c, true)
+		}
+		if forceTUI && !o.interactive() {
+			return errs.New(2, "--tui requires interactive input and output")
 		}
 		if runtime.GOOS == "windows" && o.interactive() {
 			return o.wizard(c)
@@ -60,6 +78,8 @@ func NewWith(info platform.Info, store envpath.Store, self string) *cobra.Comman
 		_ = c.Help()
 		return errs.New(2, "Use an explicit command when input or output is redirected.")
 	}}
+	root.Flags().Bool("gui", false, "Force the graphical wizard")
+	root.Flags().Bool("tui", false, "Force the terminal wizard")
 	f := root.PersistentFlags()
 	f.BoolVar(&o.dryRun, "dry-run", false, "Report changes without writing files or settings")
 	f.BoolVar(&o.dryRun, "dry-mode", false, "Alias for --dry-run")
@@ -97,6 +117,7 @@ func NewWith(info platform.Info, store envpath.Store, self string) *cobra.Comman
 		return o.runWizard(c, true)
 	})
 	ins := add("install [SPEC]", "Install Python (latest final by default)", cobra.MaximumNArgs(1), func(c *cobra.Command, a []string) error { return o.install(c, a) })
+	ins.Flags().StringVar(&o.target, "target", "", "Extract an unmanaged runtime into a new directory")
 	ins.Flags().StringVar(&o.path, "path", "auto", "PATH policy: auto, first, or none")
 	ins.Flags().BoolVar(&o.portable, "portable", false, "Contain files in --root and do not manage PATH")
 	ins.Flags().BoolVar(&o.setDefaultFlag, "set-default", false, "Make this runtime the default")
@@ -124,6 +145,7 @@ func NewWith(info platform.Info, store envpath.Store, self string) *cobra.Comman
 	})
 	un.Flags().BoolVar(&o.all, "all", false, "Remove all managed runtimes")
 	add("config ACTION [KEY] [VALUE]", "Read or change source and proxy settings", cobra.RangeArgs(1, 3), func(c *cobra.Command, a []string) error { return o.config(c, a) })
+	add("which [SPEC]", "Print an installed interpreter path", cobra.MaximumNArgs(1), o.which)
 	add("default SPEC", "Choose the default installed Python", cobra.ExactArgs(1), o.setDefault)
 	var fix bool
 	doc := add("doctor", "Explain installation and command resolution", cobra.NoArgs, func(c *cobra.Command, a []string) error {
@@ -266,6 +288,9 @@ func (o *options) mutate(c *cobra.Command, fn func(*state.State, *install.Manage
 	return e
 }
 func (o *options) install(c *cobra.Command, a []string) error {
+	if o.target != "" || c.Flags().Changed("target") {
+		return o.installTarget(c, a)
+	}
 	if o.path != "none" && o.path != "auto" && o.path != "first" {
 		return errs.New(2, "--path must be auto, first, or none")
 	}

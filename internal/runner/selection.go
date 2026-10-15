@@ -29,6 +29,15 @@ type Selection struct {
 var pythonName = regexp.MustCompile(`^python(3(?:\.\d+)?t?)?$`)
 
 func Select(root string, s *state.State, explicit string, args []string) (Selection, error) {
+	return selectInterpreter(root, s, explicit, args, true)
+}
+
+// SelectInstalled ignores script and project hints for machine-readable lookup.
+func SelectInstalled(root string, s *state.State, spec string) (Selection, error) {
+	return selectInterpreter(root, s, spec, nil, false)
+}
+
+func selectInterpreter(root string, s *state.State, explicit string, args []string, project bool) (Selection, error) {
 	result := Selection{Reason: "default", Args: append([]string{}, args...)}
 	spec := explicit
 	requirement := ""
@@ -92,7 +101,20 @@ func Select(root string, s *state.State, explicit string, args []string) (Select
 			}
 		}
 	}
-	if explicit != "" && (strings.ContainsAny(explicit, `/\`) || strings.HasSuffix(strings.ToLower(explicit), ".exe")) {
+	if project && explicit == "" && spec == "" && requirement == "" {
+		cwd, e := os.Getwd()
+		if e != nil {
+			return result, e
+		}
+		spec, e = projectVersion(cwd)
+		if e != nil {
+			return result, e
+		}
+		if spec != "" {
+			result.Reason = ".python-version"
+		}
+	}
+	if project && explicit != "" && (strings.ContainsAny(explicit, `/\`) || strings.HasSuffix(strings.ToLower(explicit), ".exe")) {
 		p, e := filepath.Abs(explicit)
 		if e != nil {
 			return result, e

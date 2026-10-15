@@ -4,7 +4,7 @@ Local build: Go 1.27.2, CGO disabled. No commit, tag, push, release, SignPath ap
 was made. Existing staged files were preserved; new edits were not staged on the owner's behalf.
 
 Delivered executable offline bundles, mirrors, static Windows proxy fallback and a local signing handoff.
-Signing itself is not activated; see [signing.md](signing.md).
+Signing itself is not activated; see [signing.md](../../docs/signing.md).
 
 ## Validation performed
 

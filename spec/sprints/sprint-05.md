@@ -15,4 +15,4 @@ Implemented scope:
 
 Validation: Go 1.27.2, vet, unit tests, pinned Staticcheck, local build, Windows lifecycle integration,
 real mirror-to-executable offline install, corruption rejection, zero-write previews, and release snapshots.
-See `docs/sprint-05-validation.md` for observed results and remaining acceptance work.
+See `spec/sprint_validation/sprint-05-validation.md` for observed results and remaining acceptance work.

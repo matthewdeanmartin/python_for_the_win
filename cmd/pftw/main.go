@@ -23,8 +23,7 @@ func main() {
 		os.Exit(shims.Run(self))
 	}
 	command := cli.New()
-	selected, _, findErr := command.Find(os.Args[1:])
-	graphical := findErr == nil && selected.Name() == "gui"
+	graphical := cli.Graphical(command, os.Args[1:])
 	if graphical {
 		gui.Main(func() { run(command, true) })
 		return
@@ -51,7 +50,7 @@ func run(command *cobra.Command, graphical bool) {
 			code = coded.Code
 		}
 	}
-	if own, _ := (platform.Native{}).OwnsConsole(); own && !shown && (!graphical || e != nil) && (e != nil || len(os.Args) > 1) {
+	if own, _ := (platform.Native{}).OwnsConsole(); own && platform.IsTerminal(os.Stdin) && platform.IsTerminal(os.Stdout) && !shown && (!graphical || e != nil) && (e != nil || len(os.Args) > 1) {
 		fmt.Fprintln(os.Stderr, "Press Enter to close.")
 		_, _ = bufio.NewReader(os.Stdin).ReadString(10)
 	}

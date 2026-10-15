@@ -1,6 +1,6 @@
 # pftw — python-for-the-win: Specification
 
-Status: draft v0.2 (2026-10-15); Sprints 1–3 implemented; local validation recorded, hosted CI/manual acceptance pending. Decisions below came out of a requirements interview with the project owner.
+Status: draft v0.2 (2026-10-15); Sprints 1–5 implemented; Sprint 6 code delivered for dogfooding, desktop/accessibility acceptance pending. Signing deferred until dogfooding is complete. Decisions below came out of a requirements interview with the project owner.
 Implementation is planned in `spec/sprints/`.
 
 ## 1. Purpose
@@ -247,7 +247,7 @@ All commands accept `--root`, `--yes` (assume "yes" on non-decision prompts), `-
 | `pftw bundle SPEC --out FILE.zip|FILE.exe` | Builds an offline bundle: `pftw.exe` + `index.json` + runtime zip(s). Running the bundled `pftw.exe` auto-detects `index.json` next to itself and works offline. The `.exe` form reads an attached archive directly; it never extracts a temporary launcher. |
 | `pftw mirror SPEC [SPEC...] --out DIRECTORY` | Write a new self-hostable index, verified payload ZIPs and a manifest. Existing output is refused; no server is launched. |
 | `pftw config get\|set\|unset KEY [VALUE]` / `pftw config list` | Persistent settings in `pftw.json` `config`. Keys: `source` (section 4.0) and `proxy` (section 13). `set source` validates by fetching and parsing the index before saving. Unknown keys → exit 2. |
-| `pftw run [--python SPEC\|PATH] [--install] [--dry-run] (SCRIPT \| -m MODULE \| -c CODE) [ARGS...]` | Run Python with a version chosen from the flag, the script's shebang, PEP 723 `requires-python`, or the default (section 7.2). |
+| `pftw run [--python SPEC\|PATH] [--install] [--dry-run] (SCRIPT \| -m MODULE \| -c CODE) [ARGS...]` | Run Python with a version chosen from the flag, the script's shebang, PEP 723 `requires-python`, `.python-version`, or the default (section 7.2). |
 | `pftw version` | pftw version, commit, Go version, GOARCH, native arch. |
 
 `--path` semantics:
@@ -281,21 +281,24 @@ Interpreter selection (first match wins):
    PATH\to\python.exe` used as-is (e.g. a venv's interpreter).
 2. **Shebang**, read from the script's first line only (max 1 KiB, UTF-8 BOM stripped, must start with `#!`).
    Accepted interpreter forms: `/usr/bin/env [-S] NAME`, `/usr/bin/NAME`, `/usr/local/bin/NAME`, bare `NAME`.
-   `NAME` must match `python(3(\.\d+)?t?)?`: `python`/`python3` → default install, `python3.15` → 3.15,
+   `NAME` must match `python(3(\.\d+)?t?)?`: `python`/`python3` → project version or default install, `python3.15` → 3.15,
    `python3.16t` → 3.16t. Words after `NAME` (e.g. `-X dev -u`) are passed to the interpreter before the script.
    A non-Python shebang (`/bin/bash`, `node`) → exit 2, "not a Python script shebang".
 3. **PEP 723** inline metadata (`# /// script` block with `requires-python = ">=3.12"`): pick the newest
    installed final release satisfying it, falling back to a pre-release only if nothing final fits. If the block
    lists `dependencies`, print one line: "pftw run doesn't install dependencies; use a venv or a tool like
    uv/pipx". Then run anyway (pftw is an installer, not a package manager).
-4. The default install.
+4. The nearest `.python-version` in the current working directory or its ancestors. One version selector,
+   at most 4 KiB; blank lines and `#` comments allowed. Multiple versions, executable paths and malformed
+   files are errors, not silently ignored. An unversioned Python shebang also falls through to this step.
+5. The default install.
 
 If the selected version isn't installed: exit 9 with "Python 3.12 isn't installed: `pftw install 3.12`". With
 `--install`, or an interactive yes to "Install it now? [y/N]" (default **No**), install it and run.
 
 Execution reuses the shim machinery (11.1): direct CreateProcess, inherited handles, a Job object, the child's
 exit code, and the current working directory unchanged. `--dry-run` prints the chosen interpreter, *why* it was
-chosen (flag/shebang/723/default), and the final argv, then exits 0.
+chosen (flag/shebang/723/.python-version/default), and the final argv, then exits 0.
 
 Non-goals: no `.venv` auto-discovery (use `--python .venv\Scripts\python.exe`), no `PY_PYTHON`-style env vars, no
 `.ini` config, no file association, no `pyw` equivalent.
@@ -359,12 +362,12 @@ logic and safe defaults, including Advanced options and collapsed Advanced user 
 Keep Gio behind Windows build constraints so Linux/macOS CLI builds and unit tests remain pure Go.
 
 `pftw gui` now explicitly launches the Windows Gio wizard. This brings forward the forced graphical entry;
-no-argument launches still use the terminal wizard. Automatic desktop detection and `--gui`/`--tui`
-overrides remain future work. Both frontends drive the same state machine and service callbacks.
+no-argument launches select GUI only with interactive handles, an exclusively owned console and an Explorer
+parent. Existing terminals select TUI. `--gui` and `--tui` override this conservative detection. Both frontends drive the same state machine and service callbacks.
 The graphical command rejects `--json`, `--yes` and `--quiet`; closing the window cancels outstanding work
 and waits for cleanup/recovery. No PE subsystem switch or console detachment is used.
 
-Entry precedence once automatic mode selection ships:
+Entry precedence:
 1. Shim dispatch runs first and never opens a wizard.
 2. Explicit CLI commands, help, version and machine-readable requests remain CLI, including redirected I/O.
 3. With no command, `--gui` or `--tui` overrides automatic choice; reject conflicting flags. Forced TUI without
@@ -579,8 +582,8 @@ cleans staging/trash, and drops state entries whose dirs are gone (after confirm
 | 2 (implemented; local checks, hosted CI pending) | System integration | Platform probes, preflight, PATH store + clash logic, shims (single-binary shim mode), `default`, `doctor` (read-only), `--portable`, exit codes |
 | 3 (implemented; local validation, manual/hosted acceptance pending) | Wizard + lifecycle | TUI wizard, double-click UX, in-place upgrade, `self-update`, goreleaser + Scoop manifest draft, README rewrite |
 | 4 (implemented; local validation, hosted/manual acceptance pending) | Runner + offline | `pftw run` (7.2: shebang + PEP 723 selection), windowed `pythonw3.X` shims, `bundle` (zip), `doctor --fix`, Restart Manager process naming |
-| 5 (implemented locally; signing onboarding and hosted acceptance pending) | Polish | `bundle` executable overlay, SignPath signing handoff (unsigned until human onboarding), static system-proxy fallback, `pftw mirror` (write a self-hostable index + zips for chosen specs, the server side of D21) |
-| 6 (explicit `pftw gui` implemented; automatic entry/accessibility validation pending) | Gio GUI | One distributed Windows exe; desktop GUI / terminal TUI selection, explicit overrides, shared safe wizard flow, console/shim compatibility validation (8.1) |
+| 5 (implemented locally; signing deferred by owner, hosted acceptance pending) | Polish | `bundle` executable overlay, SignPath signing handoff (unsigned until human onboarding), static system-proxy fallback, `pftw mirror` (write a self-hostable index + zips for chosen specs, the server side of D21) |
+| 6 (implemented for dogfooding; desktop/accessibility acceptance pending) | Gio GUI | One distributed Windows exe; desktop GUI / terminal TUI selection, explicit overrides, shared safe wizard flow, console/shim compatibility validation (8.1); `which`, plain `install --target`, `.python-version`, dependency security maintenance |
 | Optional future | Linux CI | python-build-standalone source, Linux layout, PATH via `GITHUB_PATH`/shell rc guidance, Docker docs |
 
 ## 17. Open questions (owner to decide; implementers use the stated default until then)
@@ -653,7 +656,7 @@ Resolved 2026-10-15:
   `bucket/` on main. The bootstrap manifest describes an unpublished snapshot and is not installable yet.
 - Panic details go to an OS temporary `pftw-crash-*.log`; normal operations log under the chosen root.
 - Local automated and real-runtime results, manual acceptance gaps and artifact details are recorded in
-  `docs/sprint-03-validation.md`. Hosted CI and fresh-account/conhost/Windows Terminal acceptance remain pending.
+  `spec/sprint_validation/sprint-03-validation.md`. Hosted CI and fresh-account/conhost/Windows Terminal acceptance remain pending.
 
 
 ### Explicit GUI follow-up
@@ -666,7 +669,7 @@ Resolved 2026-10-15:
   system clashes retain default No. Selected Yes/No choices have explicit text as well as color.
 - The combined stripped Windows executable is about 13.3 MB, below the 15 MB budget, using Gio's regular
   Go font face. Desktop auto-selection, DPI/accessibility coverage and the broader Sprint 6 acceptance matrix
-  remain pending. See `docs/gui-validation.md` for checks performed.
+  remain pending. See `spec/sprint_validation/gui-validation.md` for checks performed.
 
 ### Sprint 5 implementation notes
 
@@ -687,3 +690,23 @@ Resolved 2026-10-15:
 - SignPath onboarding/signing requires human-owned credentials and approval. A non-active workflow example
   is provided under docs; all local artifacts remain unsigned. Signed executable-overlay format acceptance
   remains pending until a real signing rehearsal is possible. No application or signing request was sent.
+
+
+### Sprint 6 implementation notes
+
+- `which [SPEC]` prints the absolute managed interpreter path; omitted SPEC uses the managed default,
+  independently of project files. `--json` emits an `exe` field. It never installs or changes state.
+- `install [SPEC] --target DIR` creates a new plain runtime folder. Its parent must already exist.
+  Verified downloads and smoke-test scratch files use a temporary sibling, removed on success/failure.
+  No manager state, shims, PATH, logging or pip bootstrap is added. Bundled payload contents remain intact.
+  Conflicting managed-install flags are rejected. Dry-run resolves the feed but makes no filesystem changes.
+  Failed checks remove the newly created target. A killed process may leave an incomplete target; it is
+  never adopted automatically. Target installs are not managed by upgrade/uninstall.
+- Keep the console PE subsystem for shell waiting, exit status and inherited handles. The conservative
+  Explorer heuristic avoids guessing for unknown launchers. This iteration does not detach the console:
+  an Explorer launch may show an accompanying console. GUI-subsystem/attach experiments and the desktop,
+  screen-reader and DPI matrix remain acceptance work; no screen-reader compliance is claimed.
+- `make security` scans with pinned govulncheck. `make deps-update` refreshes dependencies, tidies and runs
+  security, vet, tests and builds. Review the module diff before committing updates. CI also scans.
+- Validation records belong exclusively in `spec/sprint_validation/`; `docs/` serves users and contributors.
+- Third-party signing is explicitly deferred until the owner has dogfooded these features.

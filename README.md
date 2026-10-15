@@ -13,6 +13,32 @@ The wizard chooses the newest usable final Python. Advanced options are behind *
 **Advanced user info** is collapsed behind **I** in the terminal wizard. The GUI has Previous/Next
 navigation and a Help button opening the documentation. PATH defaults to Yes. Choose No to leave PATH alone.
 
+## Tools, projects, and plain runtime folders
+
+```sh
+pftw which 3.15                 # Absolute interpreter path; no installation
+pftw which --json               # Managed default, as {"exe": "..."}
+pftw install 3.15 --target ./python --dry-run
+pftw install 3.15 --target ./python
+pftw run -c "import sys; print(sys.executable)"
+pftw --gui                     # Force GUI (also: pftw gui)
+pftw --tui                     # Force terminal wizard
+```
+
+`--target` requires a new directory with an existing parent. It extracts the verified official payload
+and checks Python, without adding pftw state, shims, PATH entries or bootstrapping pip. The folder is yours
+to manage; `pftw upgrade` and `uninstall` do not track it. It makes no promise of relocation support.
+
+`run` honors the nearest `.python-version` from your working directory upward. Put one version such as
+`3.15` in it; comments and blank lines are allowed. Explicit `--python`, a versioned shebang and PEP 723
+requirements take precedence. A missing version is not silently replaced; use `--install` to install it.
+`which` uses an explicit version or the managed default, independently of project files.
+
+No-argument Explorer launches choose GUI conservatively; terminal launches choose TUI. Redirected calls
+show CLI help. Unknown desktop launchers may need `--gui`. A console can accompany the GUI in this build.
+Signing is deferred until these features have been dogfooded. See the
+[Sprint 6 validation record](spec/sprint_validation/sprint-06-validation.md).
+
 ## Try it
 
 Requires Windows to install runtimes. Build with Go 1.27.2 and Git Bash:
@@ -80,7 +106,7 @@ want versioned `pythonw3.X.exe` commands; `make build` and Windows release ZIPs 
 manifest and missing, previously owned user PATH entries. It preserves existing files and unrelated PATH
 entries. Missing runtimes, ambiguous/corrupt state and unowned files still require inspection.
 
-See [accessibility status](docs/accessibility.md) and [Sprint 4 validation](docs/sprint-04-validation.md).
+See [accessibility status](docs/accessibility.md) and [Sprint 4 validation](spec/sprint_validation/sprint-04-validation.md).
 
 ## Executable bundles and mirrors
 
@@ -110,7 +136,7 @@ Configured command-line/environment/config proxies retain precedence. Environmen
 this last-resort fallback. Static bypass rules and per-protocol proxy settings are respected. PAC/WPAD scripts
 are not evaluated; failed fallback errors say so. Other operating systems do not read Windows proxy settings.
 
-See [Sprint 5 validation](docs/sprint-05-validation.md) and the [unsigned-build signing handoff](docs/signing.md).
+See [Sprint 5 validation](spec/sprint_validation/sprint-05-validation.md) and the [unsigned-build signing handoff](docs/signing.md).
 
 ## Selection and PATH
 
@@ -150,7 +176,7 @@ Automatic desktop GUI selection remains planned. Linux/macOS builds are for insp
 `config set proxy ...` persist settings. Whoever controls a source controls the installed payloads.
 
 See the generated [CLI reference](docs/cli.md), [release checklist](docs/releasing.md), and
-[Sprint 3 validation record](docs/sprint-03-validation.md).
+[Sprint 3 validation record](spec/sprint_validation/sprint-03-validation.md).
 
 ## Development
 

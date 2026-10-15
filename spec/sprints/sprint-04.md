@@ -30,4 +30,4 @@ The explicit Gio GUI was brought forward; this sprint adds Previous navigation a
 Automatic desktop GUI selection and the broader accessibility acceptance matrix remain Sprint 6.
 
 Owner additions: global `--dry-run` / `--dry-mode` (read-only commands execute normally), grouped GUI
-controls, documentation Help. See `docs/sprint-04-validation.md` for measured results and limitations.
+controls, documentation Help. See `spec/sprint_validation/sprint-04-validation.md` for measured results and limitations.

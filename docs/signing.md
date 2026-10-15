@@ -1,5 +1,8 @@
 # Signing handoff (not activated)
 
+Owner decision: third-party signing is deferred until the current features have been dogfooded.
+No application, credentials or signing request is needed for this sprint.
+
 The project remains unsigned. No SignPath account, application, credential, signing request or release
 was created by the implementing agent. Spec D13 and section 15 reserve the application for the owner.
 
