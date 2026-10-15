@@ -72,5 +72,5 @@ func (o *options) installTarget(c *cobra.Command, args []string) error {
 	if err = m.Target(c.Context(), entry, target); err != nil {
 		return err
 	}
-	return o.output(c, map[string]string{"target": target, "version": entry.Version}, "Extracted Python "+entry.Version+" to "+target)
+	return o.output(c, map[string]string{"target": target, "version": entry.Version, "exe": filepath.Join(target, "python.exe")}, "Extracted Python "+entry.Version+" to "+target)
 }

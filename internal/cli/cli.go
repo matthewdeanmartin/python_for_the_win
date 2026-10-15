@@ -78,6 +78,17 @@ func NewWith(info platform.Info, store envpath.Store, self string) *cobra.Comman
 		_ = c.Help()
 		return errs.New(2, "Use an explicit command when input or output is redirected.")
 	}}
+	// Without this, cobra reports unknown commands as uncoded errors (exit 1) instead of usage errors.
+	root.Args = func(c *cobra.Command, a []string) error {
+		if len(a) == 0 {
+			return nil
+		}
+		message := fmt.Sprintf("unknown command %q for %q", a[0], c.CommandPath())
+		if suggestions := c.SuggestionsFor(a[0]); len(suggestions) > 0 {
+			message += "; did you mean " + strings.Join(suggestions, " or ") + "?"
+		}
+		return errs.New(2, "%s", message)
+	}
 	root.Flags().Bool("gui", false, "Force the graphical wizard")
 	root.Flags().Bool("tui", false, "Force the terminal wizard")
 	f := root.PersistentFlags()
@@ -386,7 +397,11 @@ func (o *options) install(c *cobra.Command, a []string) error {
 		if o.pathResolvesDefault(s) {
 			message = strings.Replace(message, "PATH was not changed.\n", "", 1) + "\nOpen a new terminal, then run: python --version"
 		}
-		return o.output(c, map[string]string{"message": message, "root": o.root}, message)
+		installed, e := s.Get(v.Key())
+		if e != nil {
+			return e
+		}
+		return o.output(c, map[string]string{"message": message, "root": o.root, "key": v.Key(), "version": installed.Version, "exe": filepath.Join(o.root, "versions", v.Key(), "python.exe")}, message)
 	})
 }
 func (o *options) list(c *cobra.Command) error {

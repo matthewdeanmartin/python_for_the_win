@@ -42,13 +42,9 @@ func run(command *cobra.Command, graphical bool) {
 	shown := errors.As(e, &presented)
 	if e != nil {
 		if !shown {
-			fmt.Fprintln(os.Stderr, e)
+			_ = cli.ReportError(os.Stderr, e, cli.JSONRequested(command)) // Nothing remains to report a failed stderr write to.
 		}
-		code = 1
-		var coded *errs.Error
-		if errors.As(e, &coded) {
-			code = coded.Code
-		}
+		code = errs.CodeOf(e)
 	}
 	if own, _ := (platform.Native{}).OwnsConsole(); own && platform.IsTerminal(os.Stdin) && platform.IsTerminal(os.Stdout) && !shown && (!graphical || e != nil) && (e != nil || len(os.Args) > 1) {
 		fmt.Fprintln(os.Stderr, "Press Enter to close.")

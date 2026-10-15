@@ -25,7 +25,9 @@ func launchLine(exe, command string) (int, error) {
 	}
 	defer func(h windows.Handle) { _ = windows.CloseHandle(h) }(job) // Release owned OS handle.
 	limits := windows.JOBOBJECT_EXTENDED_LIMIT_INFORMATION{}
-	limits.BasicLimitInformation.LimitFlags = windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+	// Python dies with the shim, but processes Python starts escape the job, as with the CPython launcher;
+	// otherwise detached servers and daemons would be killed when Python exits.
+	limits.BasicLimitInformation.LimitFlags = windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | windows.JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK
 	if _, e = windows.SetInformationJobObject(job, windows.JobObjectExtendedLimitInformation, uintptr(unsafe.Pointer(&limits)), uint32(unsafe.Sizeof(limits))); e != nil {
 		return 0, e
 	}

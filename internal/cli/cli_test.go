@@ -8,7 +8,7 @@ import (
 )
 
 func TestUsage(t *testing.T) {
-	for _, args := range [][]string{{}, {"install", "--path", "invalid"}, {"install", "bad"}, {"uninstall"}, {"config", "set", "unknown", "x"}, {"--bogus"}} {
+	for _, args := range [][]string{{}, {"install", "--path", "invalid"}, {"install", "bad"}, {"uninstall"}, {"config", "set", "unknown", "x"}, {"--bogus"}, {"frobnicate"}} {
 		c := New()
 		c.SetOut(new(bytes.Buffer))
 		c.SetErr(new(bytes.Buffer))

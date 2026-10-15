@@ -136,7 +136,7 @@ func (o *options) doctor(c *cobra.Command) error {
 			return err
 		}
 		if check.Detail != "" {
-			if _, err := fmt.Fprintf(c.OutOrStdout(), " â€” %s", check.Detail); err != nil {
+			if _, err := fmt.Fprintf(c.OutOrStdout(), " - %s", check.Detail); err != nil {
 				return err
 			}
 		}

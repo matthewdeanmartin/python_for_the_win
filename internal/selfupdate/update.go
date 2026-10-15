@@ -42,6 +42,19 @@ func Version(v string) string {
 func Scoop(path string) bool {
 	return strings.Contains(strings.ToLower(strings.ReplaceAll(path, string(rune(92)), "/")), "/scoop/apps/pftw/")
 }
+
+// Pip reports whether path is a pftw.exe that pip, pipx or uv installed into a Python environment's
+// Scripts folder. Such copies are updated by the Python package manager, not from GitHub.
+func Pip(path string) bool {
+	parent := filepath.Dir(filepath.Dir(path))
+	// Prefix installs and venvs keep Lib\site-packages beside Scripts; user installs keep site-packages there.
+	for _, site := range []string{filepath.Join(parent, "Lib", "site-packages"), filepath.Join(parent, "site-packages")} {
+		if matches, _ := filepath.Glob(filepath.Join(site, "pftw-*.dist-info")); len(matches) > 0 {
+			return true
+		}
+	}
+	return false
+}
 func (c Client) read(ctx context.Context, url string, limit int64) ([]byte, error) {
 	r, _, e := c.Download.Open(ctx, url)
 	if e != nil {

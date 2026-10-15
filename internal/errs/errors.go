@@ -1,6 +1,9 @@
 package errs
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type Error struct {
 	Code    int
@@ -27,3 +30,21 @@ type Presented struct{ Cause error }
 
 func (e *Presented) Error() string { return e.Cause.Error() }
 func (e *Presented) Unwrap() error { return e.Cause }
+
+// CodeOf returns the process exit code for err: its Code, or 1 when uncoded.
+func CodeOf(err error) int {
+	var coded *Error
+	if errors.As(err, &coded) {
+		return coded.Code
+	}
+	return 1
+}
+
+// Kind names an exit code (spec 7.1) for machine-readable error reports.
+func Kind(code int) string {
+	kinds := map[int]string{2: "usage", 3: "preflight", 4: "decision_required", 5: "network", 6: "integrity", 7: "files_in_use", 8: "unsupported_platform", 9: "not_installed"}
+	if kind, ok := kinds[code]; ok {
+		return kind
+	}
+	return "unexpected"
+}

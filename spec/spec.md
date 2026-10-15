@@ -69,7 +69,7 @@ requested development releases use the same installation machinery.
 | D12 | Extras | pip via `ensurepip` (default on). **No `py`/`pyw` launcher**: pftw stays out of the `py` namespace, which belongs to the legacy launcher and the Python Install Manager. Version picking is covered by the `python3.X` shims, and shebang-driven version picking by `pftw run` (7.2). **No** Start Menu shortcuts. **No** `.py` file association, ever: most `.py` files are importable modules, not programs, so "double-click = run" is the wrong default (it would also need the registry). |
 | D13 | Signing | Unsigned for early releases. Document SmartScreen's "More info → Run anyway". Publish sha256 + GitHub build provenance. Apply to SignPath Foundation (signpath.org, free for OSI-licensed OSS) before 1.0. A human does the application. |
 | D14 | Lifecycle | `uninstall`, `self-update`, `doctor`, and `--portable` mode. |
-| D15 | Distribution | GitHub Releases (exe + zip, via goreleaser), Scoop, and `go install`. NSIS dropped (it's C). **Monorepo**: this repo is itself the Scoop bucket (manifest at `bucket/pftw.json`; Scoop looks in a `bucket/` subdir). No separate bucket repo unless Scoop forces one. |
+| D15 | Distribution | GitHub Releases (exe + zip, via goreleaser), Scoop, PyPI Windows wheels carrying the same executables (`pip install pftw`; section 12), and `go install`. NSIS dropped (it's C). **Monorepo**: this repo is itself the Scoop bucket (manifest at `bucket/pftw.json`; Scoop looks in a `bucket/` subdir). No separate bucket repo unless Scoop forces one. |
 | D20 | Registry/PowerShell posture | Last resort only (principles 9, 10). Reads allowed when there's no other source of truth. The only write is HKCU PATH. |
 | D16 | Cross-platform | Compiles and unit-tests on Linux/macOS behind OS interfaces, but installs only on Windows. Linux installation is an optional future direction, not a committed release requirement. |
 | D17 | License | MIT. |
@@ -322,6 +322,12 @@ Non-goals: no `.venv` auto-discovery (use `--python .venv\Scripts\python.exe`), 
 something when pftw fails before launching. Automation that needs to tell them apart should call
 `pftw run --dry-run` first.
 
+With `--json`, a pftw failure writes one object to stderr, `{"error":{"code":N,"kind":"...","message":"..."}}`,
+and nothing to stdout. `kind` names the code above (`usage`, `preflight`, `decision_required`, `network`,
+`integrity`, `files_in_use`, `unsupported_platform`, `not_installed`, otherwise `unexpected`). Shim and runner
+launches put Python in a kill-on-close Job object with silent breakaway, so Python stops with pftw but
+processes Python starts are not killed when it exits (matching the CPython launcher).
+
 ## 8. Wizard (TUI)
 
 Shown when `pftw` runs with no args and stdin/stdout are a console. Keyboard only. Enter accepts the highlighted
@@ -521,6 +527,11 @@ cleans staging/trash, and drops state entries whose dirs are gone (after confirm
   git.) A separate bucket repo is created only if Scoop turns out to require it, and a human creates it. Submitting
   to Scoop's community buckets is a human follow-up. When pftw is Scoop-managed (exe under `scoop\apps`),
   `self-update` says to use `scoop update pftw` instead.
+- PyPI: `make wheels VERSION=X` builds `py3-none-win_amd64`/`win_arm64` wheels whose `.data/scripts` hold the
+  release executables, plus a minimal `pftw` package so `python -m pftw` locates and starts `pftw.exe` when
+  `Scripts` is not on PATH. The tool is still not Python. No sdist. A copy beside a `pftw-*.dist-info` in the
+  environment's site-packages is pip-managed: `self-update` refuses (exit 3) and names the pip command. Publishing
+  uses PyPI trusted publishing from an inactive workflow draft; a human configures and enables it (docs/pypi.md).
 - `go install github.com/matthewdeanmartin/python_for_the_win/cmd/pftw@latest` must work. It does, because shims are
   the same binary (11.1). On first `install`, pftw copies itself to `shims\pftw.exe` if it's running from anywhere
   else.

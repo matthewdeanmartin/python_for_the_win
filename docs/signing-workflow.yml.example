@@ -14,12 +14,15 @@ jobs:
     env:
       CGO_ENABLED: '0'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.2'
+          cache: false # Release artifacts must not depend on a poisonable cache.
       - run: make test vet lint build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         id: unsigned
         with:
           name: unsigned-windows
@@ -27,7 +30,7 @@ jobs:
             dist/pftw.exe
             dist/pftww.exe
           if-no-files-found: error
-      - uses: signpath/github-action-submit-signing-request@v3
+      - uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3.0
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
           organization-id: '${{ vars.SIGNPATH_ORGANIZATION_ID }}'
@@ -36,7 +39,7 @@ jobs:
           github-artifact-id: '${{ steps.unsigned.outputs.artifact-id }}'
           wait-for-completion: true
           output-artifact-directory: dist/signed
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: signed-windows-rehearsal
           path: dist/signed

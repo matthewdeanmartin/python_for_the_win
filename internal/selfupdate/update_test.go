@@ -111,3 +111,19 @@ func TestReplaceAndScoop(t *testing.T) {
 		t.Fatal("scoop detection")
 	}
 }
+func TestPipDetection(t *testing.T) {
+	venv := t.TempDir()
+	if e := os.MkdirAll(filepath.Join(venv, "Lib", "site-packages", "pftw-0.3.0.dist-info"), 0700); e != nil {
+		t.Fatal(e)
+	}
+	user := t.TempDir() // %APPDATA%\Python\Python312 layout
+	if e := os.MkdirAll(filepath.Join(user, "site-packages", "pftw-0.3.0.dist-info"), 0700); e != nil {
+		t.Fatal(e)
+	}
+	if !Pip(filepath.Join(venv, "Scripts", "pftw.exe")) || !Pip(filepath.Join(user, "Scripts", "pftw.exe")) {
+		t.Fatal("pip-installed copy not detected")
+	}
+	if Pip(filepath.Join(t.TempDir(), "shims", "pftw.exe")) {
+		t.Fatal("unmanaged copy reported as pip-installed")
+	}
+}

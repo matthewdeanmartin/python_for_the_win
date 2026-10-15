@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"github.com/matthewdeanmartin/python_for_the_win/internal/errs"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/install"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/platform"
 	"github.com/matthewdeanmartin/python_for_the_win/internal/selfupdate"
@@ -25,6 +26,9 @@ func (o *options) selfUpdate(c *cobra.Command, force bool) error {
 	}
 	if selfupdate.Scoop(self) {
 		return fmt.Errorf("use scoop update pftw")
+	}
+	if selfupdate.Pip(self) {
+		return errs.New(3, "pftw was installed as a Python package; update it with: python -m pip install --upgrade pftw (or pipx upgrade pftw, or uv tool upgrade pftw)")
 	}
 	return o.mutate(c, func(s *state.State, m *install.Manager) (resultErr error) {
 		d, _, e := o.client(s)

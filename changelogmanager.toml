@@ -1,0 +1,18 @@
+# keepachangelog-manager (kaclm) settings. Run with: uvx --from keepachangelog-manager-fork kaclm ...
+# Changelog-only: pftw has no version file. The git tag is the single version source for the Go
+# binary (goreleaser ldflags) and the PyPI wheels (make wheels VERSION=${tag#v}).
+[versioning]
+scheme = "semver"
+
+[validation]
+enforce_preamble = true
+format = "auto"
+
+[defaults]
+error_format = "github"
+commit_schema = "keepachangelog"
+schema_version = "current"
+
+[[components]]
+name = "default"
+changelog = "CHANGELOG.md"
