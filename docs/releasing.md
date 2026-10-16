@@ -20,8 +20,10 @@ distributes what's already there.
    | `assets` | Runs the checks (`go mod verify`, `make security`, vet, tests), builds with goreleaser for the upcoming tag (stamping the version into the exe and its Windows file properties) without publishing, builds the PyPI wheels and Scoop manifest from those exes (`make release-assets`), checks everything against `checksums.txt`, records build-provenance attestations, attaches all files to the draft, and pins the draft to this exact commit |
 
    Each push replaces the draft's files with a fresh build, so the draft always matches the newest `main`.
-3. **To release:** open **Releases** on GitHub, open the draft, check the notes and that the files are there
-   (zips, exes, `checksums.txt`, install scripts, two `.whl` files, `pftw.scoop.json`), and click **Publish
+3. **To release:** first **wait until the latest *Create Draft Release* run is green**. The draft appears within
+   seconds, but its files take a few minutes, and GitHub will let you publish an empty draft. Then open
+   **Releases**, open the draft, check the notes and that all 12 files are there (6 zips, 2 exes,
+   `checksums.txt`, `install.sh`, `install.ps1`, 2 `.whl` files, `pftw.scoop.json`), and click **Publish
    release**. GitHub creates the tag at the commit the files were built from.
 4. **Publishing starts `release.yml`.** It builds nothing:
 
@@ -49,13 +51,14 @@ The git tag is the only version source: the binaries, the wheels (pre-releases t
 
 ## If a release goes wrong
 
-Fix forward. Example: v0.1.0 was published before files were attached at draft time, so its upload step failed
-against the now-immutable release, and v0.1.0 has the source code but no downloads:
+Fix forward. Examples: v0.1.0 was published before the flow attached files at draft time, and v0.1.1 was
+published while its draft was still empty. Both are immutable source-only releases, and `release.yml` refused
+to continue for them ("no assets to download"). To recover:
 
 1. Merge that release's PR anyway, so the changelog records what was released.
-2. Pull `main`, add an entry describing the fix for users, and push. For v0.1.0:
-   `kaclm add -t fixed -m "Release downloads (exe, zips, wheels, install scripts) are attached; 0.1.0 shipped source only."`
-3. A new draft (`v0.1.1`) appears with all files attached. Check it, then publish it.
+2. Pull `main`, add an entry describing the fix for users, and push. For example:
+   `kaclm add -t fixed -m "Release downloads (exe, zips, wheels, install scripts) are attached; 0.1.0 and 0.1.1 shipped source only."`
+3. A new draft (here `v0.1.2`) appears. Wait for its files (step 3 above), check them, then publish it.
 
 A failed `release.yml` run can be re-run from the Actions tab: `verify`, `pypi` and `scoop` only read the
 release, so re-running them is safe.

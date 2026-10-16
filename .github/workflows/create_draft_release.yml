@@ -19,6 +19,7 @@ jobs:
       contents: write # Create or update the draft release.
     outputs:
       tag: ${{ steps.draft.outputs.tag }}
+      release_id: ${{ steps.draft.outputs.release_id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -33,18 +34,19 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          uvx --from keepachangelog-manager-fork==6.10.1 kaclm github-release --repository "$GITHUB_REPOSITORY"
-          # An empty [Unreleased] (right after a release) has no future version and no draft: nothing to build.
-          version="$(uvx --from keepachangelog-manager-fork==6.10.1 kaclm version --reference future 2>/dev/null | tail -n 1)" || version=""
-          draft=""
-          if [ -n "$version" ]; then
-            draft="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
-              --jq ".[] | select(.draft and .tag_name == \"v$version\") | .id")"
-          fi
-          if [ -n "$draft" ]; then
-            echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          result="$(uvx --from keepachangelog-manager-fork==6.10.1 kaclm --json github-release --repository "$GITHUB_REPOSITORY")"
+          printf '%s\n' "$result"
+          # Use the release ID kaclm reports: a new draft's tag can read back as "untagged-…", so looking it up
+          # by tag is unreliable. An empty [Unreleased] reports no release, so nothing is built.
+          release_id="$(printf '%s' "$result" | jq -r '.release_id // empty')"
+          tag="$(printf '%s' "$result" | jq -r '.tag_name // empty')"
+          state="$(printf '%s' "$result" | jq -r '.release_state // empty')"
+          if [ -n "$release_id" ] && [ -n "$tag" ] && [ "$state" = "draft" ] &&
+            [ "$(gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" --jq .draft)" = "true" ]; then
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
+            echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
           else
-            echo "No draft release for '${version:-none}'; nothing to build."
+            echo "No unpublished draft release; nothing to build."
           fi
 
   assets:
@@ -87,10 +89,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.draft.outputs.tag }}
+          RELEASE_ID: ${{ needs.draft.outputs.release_id }}
         run: |
-          gh release upload "$RELEASE_TAG" dist/assets/* --clobber
+          api="repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID"
+          if [ "$(gh api "$api" --jq .draft)" != "true" ]; then
+            echo "::error::Release $RELEASE_TAG was published before its files were attached; release the next version."
+            exit 1
+          fi
+          for file in dist/assets/*; do
+            name="$(basename "$file")"
+            # Replace a file left by an earlier build of this draft.
+            for old in $(gh api "$api/assets" --paginate --jq ".[] | select(.name == \"$name\") | .id"); do
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$old" --silent
+            done
+            curl -fsS -o /dev/null -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/octet-stream" \
+              --data-binary "@$file" \
+              "https://uploads.github.com/$api/assets?name=$name"
+            echo "Attached $name"
+          done
           # Publishing creates the tag at the draft's target, so it must be the commit these files came from.
-          id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
-            --jq ".[] | select(.draft and .tag_name == \"$RELEASE_TAG\") | .id")"
-          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$id" -f target_commitish="$GITHUB_SHA" --silent
-          echo "Draft $RELEASE_TAG now carries files built from $GITHUB_SHA."
+          gh api -X PATCH "$api" -f tag_name="$RELEASE_TAG" -f target_commitish="$GITHUB_SHA" --silent
+          echo "Draft $RELEASE_TAG carries $(gh api "$api/assets" --paginate --jq length) files built from $GITHUB_SHA."
