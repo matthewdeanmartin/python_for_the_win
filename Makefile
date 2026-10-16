@@ -117,3 +117,17 @@ docs-check:
 	$(MKDOCS) build --strict --site-dir dist/site
 docs-serve:
 	$(MKDOCS) serve
+
+# Everything attached to a draft release, assembled from goreleaser's build in dist/release plus the wheels
+# and the Scoop manifest, and checked against checksums.txt: make release-assets VERSION=v0.1.1
+.PHONY: release-assets
+release-assets: release-wheels
+	rm -rf dist/assets
+	mkdir -p dist/assets
+	set -e; v=$(patsubst v%,%,$(VERSION)); \
+	cp dist/release/*.zip dist/release/checksums.txt install.sh install.ps1 dist/wheels/*.whl dist/assets/; \
+	for arch in amd64 arm64; do \
+		cp "$$(ls -d dist/release/pftw_windows_$${arch}_*/ | head -n 1)pftw.exe" "dist/assets/pftw_$${v}_windows_$${arch}.exe"; \
+	done; \
+	$(GO) run ./internal/scoopmeta/cmd dist/release/scoop/bucket/pftw.json dist/assets/pftw.scoop.json; \
+	cd dist/assets && sha256sum -c checksums.txt

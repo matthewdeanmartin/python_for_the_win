@@ -48,18 +48,12 @@ snapshot:
   version_template: '{{ incpatch .Version }}-dev.{{ .ShortCommit }}'
 changelog:
   disable: true # kaclm writes the release notes from CHANGELOG.md.
+# goreleaser never publishes (--skip=publish): create_draft_release.yml attaches dist/assets to the
+# draft, because published releases are immutable. This section only supplies download URLs (e.g. Scoop).
 release:
   github:
     owner: matthewdeanmartin
     name: python_for_the_win
-  extra_files:
-    - glob: ./install.sh
-    - glob: ./install.ps1
-  prerelease: auto
-  mode: keep-existing # The draft release made by kaclm keeps its notes; goreleaser only adds assets.
-  header: |
-    Windows installer manager. Linux/macOS artifacts are unsupported for installing Python.
-    The Windows executables are currently unsigned. No py/pyw launcher or file associations are installed.
 scoops:
   - name: pftw
     skip_upload: true # Workflow enriches checkver/autoupdate, then commits this generated manifest.

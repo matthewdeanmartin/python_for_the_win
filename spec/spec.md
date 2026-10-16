@@ -516,14 +516,16 @@ cleans staging/trash, and drops state entries whose dirs are gone (after confirm
 
 ## 12. Self-update and releases
 
-- Release flow (docs/releasing.md): `kaclm github-release` keeps a draft GitHub release in sync with `[Unreleased]`
-  on every push to `main`; the first version is 0.1.0 (`changelogmanager.toml`). A human publishes the draft on
-  GitHub, which creates the tag. `release.yml` then opens the changelog release PR (`kaclm release-bump`), builds
-  with goreleaser from the tag (stamping the version into the binaries and Windows resources), attaches
-  `pftw_<ver>_windows_amd64.zip`, `..._arm64.zip`, raw `.exe`s, `checksums.txt` and the install scripts, records
-  GitHub build-provenance attestations, publishes PyPI wheels made from the same exes, and adds the Scoop
-  manifest to the release PR. Nobody tags or builds releases on a workstation. Tags are permanent Go module
-  versions: fix forward and `retract`, never re-tag. Builds not stamped by goreleaser report a clean module tag
+- Release flow (docs/releasing.md): releases are immutable once published, so every file is attached to the draft
+  first. On every push to `main`, `create_draft_release.yml` runs `kaclm github-release` to keep a draft release
+  in sync with `[Unreleased]`, then builds with goreleaser for the upcoming tag without publishing (stamping the
+  version into the binaries and Windows resources), builds the PyPI wheels and Scoop manifest from those exes,
+  checks all files against `checksums.txt`, records build-provenance attestations, attaches the files to the
+  draft and pins the draft to the build commit. A human publishes the draft, which creates the tag at that commit.
+  `release.yml` then builds nothing: it opens the changelog release PR (`kaclm release-bump`), verifies the
+  release files and their embedded version and commit on Windows, publishes the attached wheels to PyPI, and adds
+  the attached Scoop manifest to the release PR. Nobody tags or builds releases on a workstation. Tags are
+  permanent: fix forward and `retract`, never re-tag. Builds not stamped by goreleaser report a clean module tag
   from Go build info (`go install ...@v0.1.0`); local checkout builds stay `dev`.
 - `self-update` queries the GitHub Releases API for the latest non-prerelease (`--prerelease` opts in), downloads
   the asset for the native arch plus `checksums.txt`, verifies sha256, and replaces the exe using

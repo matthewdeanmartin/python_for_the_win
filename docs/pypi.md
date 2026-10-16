@@ -30,10 +30,11 @@ the same inputs give byte-identical files. Add `WHEEL_ARCHES="amd64 arm64 386"` 
 ## Publishing
 
 Publishing happens in the `pypi` job of `.github/workflows/release.yml` when a draft release is published on
-GitHub; see [releasing.md](releasing.md). The release wheels wrap the exact exes attached to the GitHub release
-(`make release-wheels`), are test-installed with pip on Windows, then uploaded with PyPI trusted publishing
-(no API token). The job stays skipped until the owner configures the PyPI trusted publisher (workflow
-`release.yml`, environment `pypi`) and sets the repository variable `PYPI_PUBLISH=true`.
+GitHub; see [releasing.md](releasing.md). The wheels are built at draft time from the exact exes attached to the
+release (`make release-assets`) and attached to it as files. After publishing, the release's own wheels are
+test-installed with pip on Windows and uploaded with PyPI trusted publishing (no API token). The job stays
+skipped until the owner configures the PyPI trusted publisher (workflow `release.yml`, environment `pypi`)
+and sets the repository variable `PYPI_PUBLISH=true`; re-running it later publishes that release's wheels.
 
 The `pftw` name was free on PyPI on 2026-10-15. Wheels are unsigned like the exe; PyPI shows trusted-publishing
 provenance, and the release also carries GitHub build-provenance attestations for the wheels.

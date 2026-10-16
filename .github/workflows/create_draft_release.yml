@@ -1,6 +1,8 @@
 name: Create Draft Release
-# Keeps a draft GitHub release in sync with CHANGELOG.md's [Unreleased] section. Publishing that draft
-# on GitHub creates the tag and starts release.yml. See docs/releasing.md.
+# Keeps a draft GitHub release in sync with CHANGELOG.md's [Unreleased] section and attaches every release
+# file to it: zips, exes, checksums, install scripts, PyPI wheels and the Scoop manifest. Releases are
+# immutable once published, so the draft must be complete first. Publishing it on GitHub creates the tag
+# and starts release.yml. See docs/releasing.md.
 on:
   push:
     branches: [main]
@@ -15,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # Create or update the draft release.
+    outputs:
+      tag: ${{ steps.draft.outputs.tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -24,6 +28,69 @@ jobs:
         with:
           enable-cache: false
       - name: Create or update the draft release from [Unreleased]
+        id: draft
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: uvx --from keepachangelog-manager-fork==6.10.1 kaclm github-release --repository "$GITHUB_REPOSITORY"
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          uvx --from keepachangelog-manager-fork==6.10.1 kaclm github-release --repository "$GITHUB_REPOSITORY"
+          # An empty [Unreleased] (right after a release) has no future version and no draft: nothing to build.
+          version="$(uvx --from keepachangelog-manager-fork==6.10.1 kaclm version --reference future 2>/dev/null | tail -n 1)" || version=""
+          draft=""
+          if [ -n "$version" ]; then
+            draft="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+              --jq ".[] | select(.draft and .tag_name == \"v$version\") | .id")"
+          fi
+          if [ -n "$draft" ]; then
+            echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          else
+            echo "No draft release for '${version:-none}'; nothing to build."
+          fi
+
+  assets:
+    name: Build and attach release files
+    needs: draft
+    if: needs.draft.outputs.tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Upload assets to the draft and pin its target commit.
+      id-token: write # Sign build-provenance attestations.
+      attestations: write # Store build-provenance attestations.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.2'
+          cache: false # Release artifacts must not depend on a poisonable cache.
+      - run: go mod verify
+      - run: make security
+      - run: go vet ./...
+      - run: go test ./...
+      - name: Build for the upcoming tag (nothing is published)
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
+        with:
+          version: v2.18.0
+          args: release --clean --skip=publish,validate
+        env:
+          GORELEASER_CURRENT_TAG: ${{ needs.draft.outputs.tag }}
+      - name: Assemble wheels, Scoop manifest and checked release files
+        env:
+          RELEASE_TAG: ${{ needs.draft.outputs.tag }}
+        run: make release-assets VERSION="$RELEASE_TAG"
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/assets/*
+      - name: Attach files to the draft and pin it to this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.draft.outputs.tag }}
+        run: |
+          gh release upload "$RELEASE_TAG" dist/assets/* --clobber
+          # Publishing creates the tag at the draft's target, so it must be the commit these files came from.
+          id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq ".[] | select(.draft and .tag_name == \"$RELEASE_TAG\") | .id")"
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$id" -f target_commitish="$GITHUB_SHA" --silent
+          echo "Draft $RELEASE_TAG now carries files built from $GITHUB_SHA."

@@ -1,5 +1,7 @@
 name: Release
-# Runs when the kaclm draft release is published on GitHub (which also creates the tag).
+# Runs when a draft release is published on GitHub (which also creates the tag). Nothing is built here:
+# create_draft_release.yml attached every file to the draft, and published releases are immutable.
+# This workflow verifies those files, publishes the wheels to PyPI and opens the release PR.
 # No one tags or builds releases on a workstation. See docs/releasing.md.
 on:
   release:
@@ -21,7 +23,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ github.event.release.target_commitish }}
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
@@ -32,7 +34,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           RELEASE_ID: ${{ github.event.release.id }}
-          BASE_BRANCH: ${{ github.event.release.target_commitish }}
+          # The draft's target is the exact build commit; the PR goes to the default branch.
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -49,82 +52,34 @@ jobs:
             --github-output \
             --yes
 
-  build:
-    name: Build and attach release assets
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # goreleaser uploads assets to the published release.
-      id-token: write # Sign build-provenance attestations.
-      attestations: write # Store build-provenance attestations.
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.release.tag_name }}
-          fetch-depth: 0
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: '1.27.2'
-          cache: false # Release artifacts must not depend on a poisonable cache.
-      - run: go mod verify
-      - run: make security
-      - run: go vet ./...
-      - run: go test ./...
-      - uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
-        with:
-          version: v2.18.0
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-      - name: Build PyPI wheels from the release binaries
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: make release-wheels VERSION="$RELEASE_TAG"
-      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
-        with:
-          subject-path: |
-            dist/release/*.zip
-            dist/release/*.exe
-            dist/release/checksums.txt
-            dist/wheels/*.whl
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: wheels
-          path: dist/wheels/*.whl
-          if-no-files-found: error
-          retention-days: 7
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: scoop-manifest
-          path: dist/release/scoop/bucket/pftw.json
-          if-no-files-found: error
-          retention-days: 7
-
-  check-wheels:
-    name: Test-install wheels on Windows
-    needs: build
+  verify:
+    name: Verify release files on Windows
     runs-on: windows-latest
-    permissions: {}
+    permissions:
+      contents: read # Download the release's files.
     steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: wheels
-          path: dist/wheels
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
-      - name: pip install, then run pftw both ways
+      - name: Check checksums, the built commit, and the wheels
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+          TAG_COMMIT: ${{ github.sha }}
         run: |
-          python -m pip install --only-binary :all: --no-index --find-links dist/wheels pftw
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir assets
+          (cd assets && sha256sum -c checksums.txt)
+          ls assets/*.whl assets/pftw.scoop.json
+          python -m pip install --only-binary :all: --no-index --find-links assets pftw
           pftw version | grep -F "pftw ${RELEASE_TAG#v} "
           python -m pftw version | grep -F "pftw ${RELEASE_TAG#v} "
+          # The files must come from the commit the tag points at.
+          pftw version --json | grep -F "\"commit\":\"$TAG_COMMIT\""
 
   pypi:
     name: Publish to PyPI
-    needs: check-wheels
+    needs: verify
     # Off until trusted publishing is configured; then set repository variable PYPI_PUBLISH=true.
     if: vars.PYPI_PUBLISH == 'true'
     runs-on: ubuntu-latest
@@ -132,12 +87,14 @@ jobs:
       name: pypi
       url: https://pypi.org/p/pftw
     permissions:
+      contents: read # Download the wheels attached to the release.
       id-token: write # PyPI trusted publishing; no API token is stored.
     steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: wheels
-          path: dist/wheels
+      - name: Download the release's wheels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.whl' --dir dist/wheels
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           enable-cache: false
@@ -149,7 +106,7 @@ jobs:
 
   scoop:
     name: Add Scoop manifest to the release PR
-    needs: [bump, build]
+    needs: [bump, verify]
     runs-on: ubuntu-latest
     permissions:
       contents: write # Push the manifest to the release PR branch.
@@ -158,21 +115,14 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ needs.bump.outputs.branch }}
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: '1.27.2'
-          cache: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: scoop-manifest
-          path: ${{ runner.temp }}/scoop
-      - name: Commit the manifest to the release branch
+      - name: Commit the release's Scoop manifest to the release branch
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ needs.bump.outputs.branch }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          go run ./internal/scoopmeta/cmd "$RUNNER_TEMP/scoop/pftw.json" bucket/pftw.json
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern pftw.scoop.json --output bucket/pftw.json --clobber
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add bucket/pftw.json
