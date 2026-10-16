@@ -164,3 +164,82 @@ func TestNormalizeTagVersions(t *testing.T) {
 		t.Fatal(path, e)
 	}
 }
+
+// zipWith writes an archive with the standard streaming writer, optionally breaking one PyPI rule.
+func zipWith(t *testing.T, breakRule func(*zip.Writer, *os.File)) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "x.whl")
+	out, e := os.Create(path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	w := zip.NewWriter(out)
+	if breakRule != nil {
+		breakRule(w, out)
+	}
+	if e = w.Close(); e != nil {
+		t.Fatal(e)
+	}
+	if e = out.Close(); e != nil {
+		t.Fatal(e)
+	}
+	return path
+}
+
+func TestVerifyEnforcesPyPIArchiveRules(t *testing.T) {
+	stream := func(name string) func(*zip.Writer, *os.File) {
+		return func(w *zip.Writer, _ *os.File) {
+			entry, _ := w.CreateHeader(&zip.FileHeader{Name: name, Method: zip.Deflate})
+			_, _ = entry.Write([]byte("data"))
+		}
+	}
+	for name, breakRule := range map[string]func(*zip.Writer, *os.File){
+		// The v0.1.3 upload failure: CreateHeader streams entries with data descriptors.
+		"data descriptor": stream("pftw/__init__.py"),
+		"duplicate names": func(w *zip.Writer, _ *os.File) {
+			for i := 0; i < 2; i++ {
+				_ = writeEntry(w, file{"a.py", []byte("x")})
+			}
+		},
+		"unprintable name": func(w *zip.Writer, _ *os.File) { _ = writeEntry(w, file{"a b.py", []byte("x")}) },
+		"archive comment": func(w *zip.Writer, _ *os.File) {
+			_ = writeEntry(w, file{"a.py", []byte("x")})
+			_ = w.SetComment("hidden")
+		},
+	} {
+		if e := Verify(zipWith(t, breakRule)); e == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+	good := zipWith(t, func(w *zip.Writer, _ *os.File) { _ = writeEntry(w, file{"a.py", []byte("print(1)")}) })
+	if e := Verify(good); e != nil {
+		t.Fatal(e)
+	}
+	b, _ := os.ReadFile(good)
+	trailing := filepath.Join(t.TempDir(), "trailing.whl")
+	_ = os.WriteFile(trailing, append(b, "PK"...), 0o644)
+	prepended := filepath.Join(t.TempDir(), "prepended.whl")
+	_ = os.WriteFile(prepended, append([]byte("MZ"), b...), 0o644)
+	for _, p := range []string{trailing, prepended} {
+		if e := Verify(p); e == nil {
+			t.Errorf("%s accepted", filepath.Base(p))
+		}
+	}
+}
+
+func TestBuiltWheelHasNoDataDescriptors(t *testing.T) {
+	path, e := Build(t.TempDir(), inputs(t))
+	if e != nil {
+		t.Fatal(e)
+	}
+	r, e := zip.OpenReader(path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer func() { _ = r.Close() }()
+	for _, f := range r.File {
+		if f.Flags&0x8 != 0 || f.Modified.Year() != 1980 {
+			t.Errorf("%s: flags %#x, modified %v", f.Name, f.Flags, f.Modified)
+		}
+	}
+}

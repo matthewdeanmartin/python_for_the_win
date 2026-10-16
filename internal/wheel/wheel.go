@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 )
 
 const (
@@ -30,8 +29,9 @@ var Platforms = map[string]string{"amd64": "win_amd64", "arm64": "win_arm64", "3
 // PEP 440 public versions, without local segments (PyPI rejects those).
 var pep440 = regexp.MustCompile(`^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$`)
 
-// Fixed timestamps keep wheels reproducible.
-var stamp = time.Date(1980, 1, 2, 0, 0, 0, 0, time.UTC)
+// Fixed timestamps keep wheels reproducible: 1980-01-02 00:00 in MS-DOS date format (the earliest ZIP date,
+// plus a day so no time zone shifts it before 1980).
+const dosDate = 0<<9 | 1<<5 | 2 // (year-1980)<<9 | month<<5 | day
 
 type Spec struct {
 	Version  string
@@ -121,11 +121,7 @@ func Build(dir string, s Spec) (string, error) {
 	}
 	w := zip.NewWriter(out)
 	for _, f := range files {
-		entry, e := w.CreateHeader(&zip.FileHeader{Name: f.name, Method: zip.Deflate, Modified: stamp})
-		if e == nil {
-			_, e = entry.Write(f.data)
-		}
-		if e != nil {
+		if e = writeEntry(w, f); e != nil {
 			_ = out.Close()
 			_ = os.Remove(path)
 			return "", e
@@ -134,6 +130,9 @@ func Build(dir string, s Spec) (string, error) {
 	e = w.Close()
 	if ce := out.Close(); e == nil {
 		e = ce
+	}
+	if e == nil {
+		e = Verify(path)
 	}
 	if e != nil {
 		_ = os.Remove(path)

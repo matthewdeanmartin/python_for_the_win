@@ -27,6 +27,12 @@ so semver prereleases are translated (`0.2.0-rc.1` → `0.2.0rc1`, `-beta.2` →
 `-dev.3` → `.dev3`); anything else is rejected. Wheels are reproducible:
 the same inputs give byte-identical files. Add `WHEEL_ARCHES="amd64 arm64 386"` for a 32-bit wheel.
 
+PyPI rejects some ZIP files that pip, uv and `twine check` accept ([PyPI's archive rules](https://docs.pypi.org/archives/);
+the server also refuses data descriptors, which Go's streaming `zip.Writer` adds to every entry). So the
+builder writes each entry with its size and checksum up front, and `wheel.Verify` checks every wheel it
+builds against those rules; a wheel PyPI would refuse fails the build instead of the upload.
+v0.1.3's wheels were refused for exactly this reason.
+
 ## Publishing
 
 Publishing happens in the `pypi` job of `.github/workflows/release.yml` when a draft release is published on
