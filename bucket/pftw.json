@@ -2,19 +2,19 @@
   "architecture": {
     "64bit": {
       "bin": [
-        "pftww.exe",
-        "pftw.exe"
+        "pftw.exe",
+        "pftww.exe"
       ],
-      "hash": "19f8989fe2ddf6d55895a24acaa14afec0f6c3a8885938b0ef0ac9ecbe8e096a",
-      "url": "https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.0.0/pftw_0.3.0-dev.5687adc_windows_amd64.zip"
+      "hash": "e967ec8fef695237ac72be8f7b1260bf86f130da51e7d1b63f7a8f9c78a22851",
+      "url": "https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.1.2/pftw_0.1.2_windows_amd64.zip"
     },
     "arm64": {
       "bin": [
-        "pftww.exe",
-        "pftw.exe"
+        "pftw.exe",
+        "pftww.exe"
       ],
-      "hash": "7dcd2634267a5220a573dca9fab1e027875739979d311317d91a3c13d27cfbcb",
-      "url": "https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.0.0/pftw_0.3.0-dev.5687adc_windows_arm64.zip"
+      "hash": "f77fabc934c8eadeccb5713c4394db14067319fbdaa4a642126310d35787bc15",
+      "url": "https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.1.2/pftw_0.1.2_windows_arm64.zip"
     }
   },
   "autoupdate": {
@@ -37,6 +37,5 @@
   "description": "Install official Python without a system installer",
   "homepage": "https://github.com/matthewdeanmartin/python_for_the_win",
   "license": "MIT",
-  "version": "0.3.0-dev.5687adc",
-  "notes": "Unpublished local snapshot: release URLs are placeholders until the first human release."
+  "version": "0.1.2"
 }
