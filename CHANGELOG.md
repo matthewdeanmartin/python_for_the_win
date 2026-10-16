@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Fixed
+- Release downloads (exe, zips, wheels, install scripts) are attached; 0.1.0 shipped source only.
+
 ## [0.1.0] - 2026-10-16
 ### Added
 - Install wizard: double-click `pftw.exe` and press Enter until done to get the newest official Python with pip, for your user only. No administrator rights, Microsoft Store, MSI, registry entries (other than your PATH) or Program Files. Works in the terminal or as a graphical window (`pftw gui`).
