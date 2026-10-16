@@ -1,9 +1,10 @@
 # Python for the Win
 
-Python installer for Windows that doesn't require an enterprise IT department or attempt to integrate with one.
+Python installer for Windows that doesn't require an enterprise IT department.
 
 An installer that isn't arrogant and elitist and require you to understand the internals of the installer and operating
-system to install or to be a machine who doesn't need to understand.
+system to install or to be a machine who doesn't need to understand. Integrates with as few of Microsoft's products as
+possible. They're not for you if you're not an enterprise or an internal Microsoft project.
 
 ## Installation: Don't have Python at all yet?
 
