@@ -3,6 +3,7 @@
 # binary (goreleaser ldflags) and the PyPI wheels (make wheels VERSION=${tag#v}).
 [versioning]
 scheme = "semver"
+initial_version = "0.1.0" # First release; later versions follow the change types.
 
 [validation]
 enforce_preamble = true
