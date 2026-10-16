@@ -22,7 +22,7 @@ distributes what's already there.
    Each push replaces the draft's files with a fresh build, so the draft always matches the newest `main`.
 3. **To release:** first **wait until the latest *Create Draft Release* run is green**. The draft appears within
    seconds, but its files take a few minutes, and GitHub will let you publish an empty draft. Then open
-   **Releases**, open the draft, check the notes and that all 12 files are there (6 zips, 2 exes,
+   **Releases**, open the draft, check the notes and that all 14 files are there (6 zips, 2 exes,
    `checksums.txt`, `install.sh`, `install.ps1`, 2 `.whl` files, `pftw.scoop.json`), and click **Publish
    release**. GitHub creates the tag at the commit the files were built from.
 4. **Publishing starts `release.yml`.** It builds nothing:
@@ -31,7 +31,7 @@ distributes what's already there.
    |---|---|
    | `bump` | `kaclm release-bump` moves `[Unreleased]` into `## [0.1.1] - date` on a `release/bump-…` branch and opens a release PR |
    | `verify` | On Windows: downloads the release's files, checks them against `checksums.txt`, `pip install`s the wheels, and checks that `pftw version` reports this version **and the tag's commit** |
-   | `pypi` | Uploads the release's own wheels with PyPI trusted publishing. **Skipped until you set `PYPI_PUBLISH`** (below) |
+   | `pypi` | Uploads the release's own wheels with PyPI trusted publishing (setup below) |
    | `scoop` | Adds the release's `pftw.scoop.json` to the release PR as `bucket/pftw.json` |
 
 5. **Merge the release PR.** That puts the dated changelog section and the Scoop manifest on `main`.
@@ -69,14 +69,14 @@ release, so re-running them is safe.
    *Allow GitHub Actions to create and approve pull requests*. Without it, the `bump` job can't open the release PR.
 2. **Branch protection** (if enabled on `main`): the bump and Scoop jobs push only to `release/bump-…` branches,
    and their changes reach `main` through the PR, so normal protection rules work.
-3. **PyPI**, when you're ready (see [pypi.md](pypi.md)):
-   1. On PyPI, add a *pending trusted publisher* for project `pftw`: owner `matthewdeanmartin`, repository
-      `python_for_the_win`, workflow `release.yml`, environment `pypi`.
-   2. In GitHub, create an environment named `pypi` (optionally requiring your approval).
-   3. Add a repository **variable** (not a secret) `PYPI_PUBLISH` = `true`.
+3. **PyPI trusted publishing** (see [pypi.md](pypi.md)): on PyPI, add a trusted publisher for project `pftw`:
+   owner `matthewdeanmartin`, repository `python_for_the_win`, workflow `release.yml`, environment `pypi`
+   (or leave the environment blank). GitHub creates the `pypi` environment on first use; add required
+   reviewers to it if you want to approve each upload.
 
-   Until then, releases still carry the wheels as downloadable files, and the `pypi` job shows as skipped.
-   Re-running a release's `pypi` job later publishes that release's wheels.
+   To publish an already-released version (for example one released before PyPI was set up), run
+   `gh workflow run release.yml -f tag=v0.1.2` or use **Actions → Release → Run workflow**. That verifies the
+   release's files and uploads its wheels, without opening another PR.
 
 ## Pre-releases
 

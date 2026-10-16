@@ -3,16 +3,27 @@ name: Release
 # create_draft_release.yml attached every file to the draft, and published releases are immutable.
 # This workflow verifies those files, publishes the wheels to PyPI and opens the release PR.
 # No one tags or builds releases on a workstation. See docs/releasing.md.
+# Run it by hand (Actions → Release → Run workflow, or `gh workflow run release.yml -f tag=v0.1.2`) to
+# verify and publish an already-published release's wheels to PyPI later; that skips the PR and Scoop jobs.
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release whose wheels go to PyPI, e.g. v0.1.2
+        required: true
+        type: string
 permissions: {}
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 concurrency:
-  group: release-${{ github.event.release.tag_name }}
+  group: release-${{ github.event.release.tag_name || inputs.tag }}
   cancel-in-progress: false # Never interrupt a half-published release.
 jobs:
   bump:
     name: Changelog release PR
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
       contents: write # Push the release/bump branch.
@@ -32,7 +43,6 @@ jobs:
         id: release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
           RELEASE_ID: ${{ github.event.release.id }}
           # The draft's target is the exact build commit; the PR goes to the default branch.
           BASE_BRANCH: ${{ github.event.repository.default_branch }}
@@ -65,9 +75,10 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          TAG_COMMIT: ${{ github.sha }}
         run: |
+          # Only published releases resolve here (drafts return 404), so a manual run can't publish a draft.
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .tag_name
+          TAG_COMMIT="$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_TAG" --jq .sha)"
           gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir assets
           (cd assets && sha256sum -c checksums.txt)
           ls assets/*.whl assets/pftw.scoop.json
@@ -80,8 +91,6 @@ jobs:
   pypi:
     name: Publish to PyPI
     needs: verify
-    # Off until trusted publishing is configured; then set repository variable PYPI_PUBLISH=true.
-    if: vars.PYPI_PUBLISH == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -93,7 +102,6 @@ jobs:
       - name: Download the release's wheels
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.whl' --dir dist/wheels
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
@@ -107,6 +115,7 @@ jobs:
   scoop:
     name: Add Scoop manifest to the release PR
     needs: [bump, verify]
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
       contents: write # Push the manifest to the release PR branch.
@@ -120,7 +129,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ needs.bump.outputs.branch }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern pftw.scoop.json --output bucket/pftw.json --clobber
           git config user.name "github-actions[bot]"

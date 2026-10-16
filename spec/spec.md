@@ -540,7 +540,7 @@ cleans staging/trash, and drops state entries whose dirs are gone (after confirm
   release executables, plus a minimal `pftw` package so `python -m pftw` locates and starts `pftw.exe` when
   `Scripts` is not on PATH. The tool is still not Python. No sdist. A copy beside a `pftw-*.dist-info` in the
   environment's site-packages is pip-managed: `self-update` refuses (exit 3) and names the pip command. Publishing
-  uses PyPI trusted publishing in `release.yml`, skipped until a human configures it and sets `PYPI_PUBLISH` (docs/pypi.md).
+  uses PyPI trusted publishing in `release.yml`; a manual run of `release.yml` with a tag publishes an earlier release's wheels (docs/pypi.md).
 - One-line bootstrap scripts (`install.sh` for Git Bash, `install.ps1` for Windows PowerShell 5.1/7) are
   optional, separately distributed conveniences; pftw itself still never launches a shell. They read a PEP 503
   index (PyPI by default), choose the newest non-yanked final wheel unless `PFTW_VERSION` is set, verify its
