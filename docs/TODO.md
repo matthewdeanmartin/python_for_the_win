@@ -25,13 +25,16 @@ should install the pftw from that same release by default.
    PEP 440 the way `internal/wheel.Normalize` does). The repo copy keeps "newest final release" behavior.
    Today the attached copies are unmodified, so a tagged script still installs the newest pftw.
 2. **Document release-asset URLs as the main one-liner**, not `raw.githubusercontent.com/.../main/`:
-   - pinned: `https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.3.0/install.ps1`
+   - pinned: `https://github.com/matthewdeanmartin/python_for_the_win/releases/download/v0.1.0/install.ps1`
    - current: `https://github.com/matthewdeanmartin/python_for_the_win/releases/latest/download/install.ps1`
      (follows the newest *published* release, never unreleased commits on `main`).
 
    Then update the README, `docs/install-scripts.md` and the PyPI description (it reuses the README).
-3. **Turn on GitHub immutable releases** (repository setting; human operator) so release assets and tags
+3. **Consider GitHub immutable releases** (repository setting; human operator) so release assets and tags
    can't be replaced after publishing. Without it, "pinned to a tag" is a convention, not a guarantee.
+   **Do not enable it with the current flow:** it freezes assets at publish time, and `release.yml` attaches
+   assets *after* the draft is published. It first needs the build to attach assets to the draft before
+   publishing, for example a manually started "prepare release" workflow that runs goreleaser against the draft.
 4. **Publish the script checksums with the release.** `checksums.txt` already includes both scripts.
    Document the cautious path: download the script, compare its SHA-256 with `checksums.txt` (and the
    build-provenance attestation, `gh attestation verify`), then run it.
@@ -40,7 +43,7 @@ should install the pftw from that same release by default.
 6. **Test it.** Extend `internal/installscripts` to check that a stamped script defaults to its own version
    and that `PFTW_VERSION` still overrides it.
 
-Order: 1 and 2 together (they only make sense as a pair), then 3 at the first release, then 4–6.
+Order: 1 and 2 together (they only make sense as a pair), then 4–6; 3 only after the release flow attaches assets before publishing.
 
 ## Other follow-ups
 
@@ -53,5 +56,5 @@ Order: 1 and 2 together (they only make sense as a pair), then 3 at the first re
 - **`py` / PEP 514 compatibility gap.** Tools that discover Pythons through the registry don't see non-default
   pftw installs. Document `pftw which` as the workaround, or decide (spec D2) whether to register them.
 - **Workflow polish from zizmor's auditor profile:** a concurrency group for CI, and `name:` on each job.
-- **First release and PyPI publishing** (human operator): `docs/releasing.md`, `docs/pypi.md`.
+- **First release** (human operator): one-time setup in `docs/releasing.md`, then publish the v0.1.0 draft.
 - **Signing** after dogfooding: `docs/signing.md`.

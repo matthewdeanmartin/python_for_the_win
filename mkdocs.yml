@@ -1,0 +1,57 @@
+site_name: "Python for the Win (pftw)"
+site_url: "https://python-for-the-win.readthedocs.io/"
+site_author: "Matthew Dean Martin"
+site_description: "Install official Python on Windows without the Store, MSI or Python Install Manager"
+
+repo_url: "https://github.com/matthewdeanmartin/python_for_the_win"
+edit_uri: edit/main/docs/
+
+theme:
+  name: readthedocs
+
+markdown_extensions:
+  - attr_list
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - "Home": "index.md"
+  - "Getting started":
+      - "Installing Python": "installing.md"
+      - "One-line install scripts": "install-scripts.md"
+  - "Using pftw":
+      - "Everyday commands": "everyday-commands.md"
+      - "Offline, mirrors and proxies": "offline-and-mirrors.md"
+      - "Scripting and automation": "scripting.md"
+  - "Troubleshooting":
+      - "Start here": "troubleshooting/index.md"
+      - "Installing": "troubleshooting/installing.md"
+      - "Which Python runs (PATH)": "troubleshooting/path.md"
+      - "Upgrades, packages and venvs": "troubleshooting/upgrades.md"
+      - "Networks, proxies and downloads": "troubleshooting/network.md"
+      - "Removing pftw": "troubleshooting/removing.md"
+  - "Reference":
+      - "Command reference": "cli.md"
+      - "What pftw changes on your computer": "reference/what-pftw-changes.md"
+      - "Known limitations": "reference/known-limitations.md"
+      - "Accessibility": "accessibility.md"
+  - "Project":
+      - "Development": "development.md"
+      - "Releasing": "releasing.md"
+      - "PyPI package": "pypi.md"
+      - "Dependency maintenance": "maintenance.md"
+      - "Signing": "signing.md"
+      - "TODO": "TODO.md"
+
+validation:
+  nav:
+    omitted_files: warn
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+plugins:
+  - search

@@ -16,28 +16,24 @@
 ## Build and check locally (Git Bash)
 
 ```bash
-make wheels VERSION=0.3.0        # dist/wheels/pftw-0.3.0-py3-none-win_{amd64,arm64}.whl
-make wheels-check VERSION=0.3.0  # pip install into a temp venv (wheels only), run, uninstall
+make wheels VERSION=0.1.0        # dist/wheels/pftw-0.1.0-py3-none-win_{amd64,arm64}.whl
+make wheels-check VERSION=0.1.0  # pip install into a temp venv (wheels only), run, uninstall
 uvx twine check --strict dist/wheels/*.whl
 ```
 
 `VERSION` is the release tag without `v`. The tag is the only version source: goreleaser stamps it into
 the release exe, and `make wheels` stamps the same text into the wheel's exe. Wheel metadata needs PEP 440,
-so semver prereleases are translated (`0.4.0-rc.1` → `0.4.0rc1`, `-beta.2` → `b2`, `-alpha.1` → `a1`,
+so semver prereleases are translated (`0.2.0-rc.1` → `0.2.0rc1`, `-beta.2` → `b2`, `-alpha.1` → `a1`,
 `-dev.3` → `.dev3`); anything else is rejected. Wheels are reproducible:
 the same inputs give byte-identical files. Add `WHEEL_ARCHES="amd64 arm64 386"` for a 32-bit wheel.
 
-## Publishing (human operator)
+## Publishing
 
-No upload has been done, and none of this is active.
+Publishing happens in the `pypi` job of `.github/workflows/release.yml` when a draft release is published on
+GitHub; see [releasing.md](releasing.md). The release wheels wrap the exact exes attached to the GitHub release
+(`make release-wheels`), are test-installed with pip on Windows, then uploaded with PyPI trusted publishing
+(no API token). The job stays skipped until the owner configures the PyPI trusted publisher (workflow
+`release.yml`, environment `pypi`) and sets the repository variable `PYPI_PUBLISH=true`.
 
-1. Confirm the `pftw` name is still free on PyPI (it was on 2026-10-15), or reserve it with a first upload.
-2. On PyPI, add a *trusted publisher* for repository `matthewdeanmartin/python_for_the_win`, workflow
-   `pypi.yml`, environment `pypi`. No API token is needed.
-3. Create a protected `pypi` environment in the GitHub repository settings.
-4. Copy [`pypi-workflow.yml.example`](pypi-workflow.yml.example) to `.github/workflows/pypi.yml`.
-   On the next `v*` tag it builds the wheels, test-installs them on Windows, and uploads them.
-
-Alternatively, upload one release by hand: `make wheels VERSION=...` then `uvx twine upload dist/wheels/*`.
-
-Wheels are unsigned like the exe. PyPI shows trusted-publishing provenance for uploads from the workflow.
+The `pftw` name was free on PyPI on 2026-10-15. Wheels are unsigned like the exe; PyPI shows trusted-publishing
+provenance, and the release also carries GitHub build-provenance attestations for the wheels.

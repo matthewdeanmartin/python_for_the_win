@@ -516,8 +516,15 @@ cleans staging/trash, and drops state entries whose dirs are gone (after confirm
 
 ## 12. Self-update and releases
 
-- Releases are built by goreleaser in GitHub Actions: `pftw_<ver>_windows_amd64.zip`, `..._arm64.zip`, raw `.exe`s,
-  `checksums.txt`, and GitHub build-provenance attestations (`actions/attest-build-provenance`).
+- Release flow (docs/releasing.md): `kaclm github-release` keeps a draft GitHub release in sync with `[Unreleased]`
+  on every push to `main`; the first version is 0.1.0 (`changelogmanager.toml`). A human publishes the draft on
+  GitHub, which creates the tag. `release.yml` then opens the changelog release PR (`kaclm release-bump`), builds
+  with goreleaser from the tag (stamping the version into the binaries and Windows resources), attaches
+  `pftw_<ver>_windows_amd64.zip`, `..._arm64.zip`, raw `.exe`s, `checksums.txt` and the install scripts, records
+  GitHub build-provenance attestations, publishes PyPI wheels made from the same exes, and adds the Scoop
+  manifest to the release PR. Nobody tags or builds releases on a workstation. Tags are permanent Go module
+  versions: fix forward and `retract`, never re-tag. Builds not stamped by goreleaser report a clean module tag
+  from Go build info (`go install ...@v0.1.0`); local checkout builds stay `dev`.
 - `self-update` queries the GitHub Releases API for the latest non-prerelease (`--prerelease` opts in), downloads
   the asset for the native arch plus `checksums.txt`, verifies sha256, and replaces the exe using
   rename-then-write (`pftw.exe` → `pftw.exe.old`, new → `pftw.exe`, delete `.old` on next start).
@@ -531,7 +538,7 @@ cleans staging/trash, and drops state entries whose dirs are gone (after confirm
   release executables, plus a minimal `pftw` package so `python -m pftw` locates and starts `pftw.exe` when
   `Scripts` is not on PATH. The tool is still not Python. No sdist. A copy beside a `pftw-*.dist-info` in the
   environment's site-packages is pip-managed: `self-update` refuses (exit 3) and names the pip command. Publishing
-  uses PyPI trusted publishing from an inactive workflow draft; a human configures and enables it (docs/pypi.md).
+  uses PyPI trusted publishing in `release.yml`, skipped until a human configures it and sets `PYPI_PUBLISH` (docs/pypi.md).
 - One-line bootstrap scripts (`install.sh` for Git Bash, `install.ps1` for Windows PowerShell 5.1/7) are
   optional, separately distributed conveniences; pftw itself still never launches a shell. They read a PEP 503
   index (PyPI by default), choose the newest non-yanked final wheel unless `PFTW_VERSION` is set, verify its
@@ -669,8 +676,8 @@ Resolved 2026-10-15:
 - Mutation startup and wizard preparation recover pending runtime/PATH transactions under the root lock.
   Read-only commands stay read-only. Package writes concurrent with upgrades are unsupported.
 - GoReleaser v2.18.0 generates Scoop manifests but does not expose checkver/autoupdate fields. Its Scoop
-  upload is disabled; the release workflow enriches the generated manifest and commits it to this repository's
-  `bucket/` on main. The bootstrap manifest describes an unpublished snapshot and is not installable yet.
+  upload is disabled; the release workflow enriches the generated manifest and adds it to the release PR for this repository's
+  `bucket/` (superseded: originally committed straight to main). The bootstrap manifest describes an unpublished snapshot and is not installable yet.
 - Panic details go to an OS temporary `pftw-crash-*.log`; normal operations log under the chosen root.
 - Local automated and real-runtime results, manual acceptance gaps and artifact details are recorded in
   `spec/sprint_validation/sprint-03-validation.md`. Hosted CI and fresh-account/conhost/Windows Terminal acceptance remain pending.

@@ -46,7 +46,7 @@ pftw's exit code is passed through. See [scripting](scripting.md).
 
 | Variable | Effect |
 |---|---|
-| `PFTW_VERSION` | Install this pftw version (e.g. `0.3.0`, or a pre-release such as `0.4.0rc1`) |
+| `PFTW_VERSION` | Install this pftw version (e.g. `0.1.0`, or a pre-release such as `0.2.0rc1`) |
 | `PFTW_INDEX_URL` | Use another PEP 503 "simple" index, such as a company mirror (default `https://pypi.org/simple`) |
 | `PFTW_KEEP` | Save `pftw.exe` (and `pftww.exe`) into this folder instead of running it |
 | `PFTW_ALLOW_INSECURE` | `1` allows a non-HTTPS index. For testing only: the index supplies the checksum |
@@ -55,7 +55,7 @@ pftw's exit code is passed through. See [scripting](scripting.md).
 
 - Piping a script into a shell runs whatever that URL serves at that moment
   ([planned fix](TODO.md#pin-the-one-line-install-scripts-to-releases)). To pin it, use a release tag
-  in the URL instead of `main` (for example `.../python_for_the_win/v0.3.0/install.ps1`) and set `PFTW_VERSION`.
+  in the URL instead of `main` (for example `.../python_for_the_win/v0.1.0/install.ps1`) and set `PFTW_VERSION`.
   The scripts are also attached to each GitHub release.
 - To read before running: download the script, look at it, then run it
   (`bash install.sh`, or `powershell -ExecutionPolicy Bypass -File install.ps1`).
@@ -71,9 +71,9 @@ Windows 10 and later include `curl.exe` and a `tar.exe` that can unpack ZIP file
 
 ```text
 curl.exe -LO <wheel URL>
-certutil -hashfile pftw-0.3.0-py3-none-win_amd64.whl SHA256
-tar.exe -xf pftw-0.3.0-py3-none-win_amd64.whl
-pftw-0.3.0.data\scripts\pftw.exe
+certutil -hashfile pftw-0.1.0-py3-none-win_amd64.whl SHA256
+tar.exe -xf pftw-0.1.0-py3-none-win_amd64.whl
+pftw-0.1.0.data\scripts\pftw.exe
 ```
 
 Compare the `certutil` output with the SHA-256 on PyPI before running pftw.

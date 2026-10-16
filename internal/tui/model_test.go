@@ -84,6 +84,10 @@ func TestFlowAndFailure(t *testing.T) {
 	if m.Screen != Failed || !strings.Contains(m.View(), "example.log") {
 		t.Fatal(m)
 	}
+	// Failures link to troubleshooting instead of explaining everything on screen.
+	if !strings.Contains(strings.ReplaceAll(m.View(), "\n", ""), TroubleshootingURL) || m.Page().HelpURL != TroubleshootingURL {
+		t.Fatal("failure screen does not lead to troubleshooting")
+	}
 	n, _ = m.Update(Finished{Message: "done"})
 	if n.(Model).Screen != Done {
 		t.Fatal(n)

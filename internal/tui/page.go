@@ -11,13 +11,14 @@ type Action struct {
 }
 type Page struct {
 	Title, Body, Info, EditorLabel, EditorValue string
+	HelpURL                                     string // Where Help opens for this screen.
 	Actions                                     []Action
 	Editing, Working                            bool
 	Fraction                                    float32
 }
 
 func (m Model) Page() Page {
-	p := Page{Working: m.busy, Fraction: -1}
+	p := Page{Working: m.busy, Fraction: -1, HelpURL: DocsURL}
 	add := func(key, label string, primary bool) {
 		p.Actions = append(p.Actions, Action{Key: key, Label: label, Primary: primary, Group: actionGroup(key)})
 	}
@@ -113,7 +114,8 @@ func (m Model) Page() Page {
 		add("enter", "Finish", true)
 	case Failed:
 		p.Title = "Installation could not finish"
-		p.Body = m.Result.Err.Error() + "\n\nLog: " + m.LogPath
+		p.Body = m.Result.Err.Error() + "\n\nLog: " + m.LogPath + "\nHelp opens troubleshooting: " + TroubleshootingURL
+		p.HelpURL = TroubleshootingURL
 		add("enter", "Close", true)
 	case Blocked:
 		p.Title = "Installation paused"
@@ -123,7 +125,8 @@ func (m Model) Page() Page {
 		} else if m.conflict == "AliasBlock" {
 			p.Body = "A Python app execution alias takes precedence. Turn off that alias, or choose No for PATH."
 		}
-		p.Body += "\n\nLog: " + m.LogPath
+		p.Body += "\n\nLog: " + m.LogPath + "\nHelp opens troubleshooting: " + TroubleshootingURL
+		p.HelpURL = TroubleshootingURL
 		add("r", "Recheck", true)
 	}
 	if m.PreviousAvailable() {

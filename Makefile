@@ -95,3 +95,24 @@ ZIZMOR ?= uvx zizmor@1.31.0
 workflows-check:
 	actionlint .github/workflows/*.yml
 	GH_TOKEN="$${GH_TOKEN:-$$(gh auth token 2>/dev/null)}" $(ZIZMOR) .github/workflows
+
+# Release wheels wrap goreleaser's binaries (dist/release), so PyPI and the GitHub release ship
+# identical executables: make release-wheels VERSION=0.1.0 (the tag; v and semver pre-releases are fine).
+.PHONY: release-wheels
+release-wheels:
+	@test -n "$(VERSION)" || { echo "usage: make release-wheels VERSION=0.1.0" >&2; exit 2; }
+	rm -rf dist/wheels
+	set -e; for arch in amd64 arm64; do \
+		manager=$$(ls -d dist/release/pftw_windows_$${arch}_*/ | head -n 1); \
+		windowed=$$(ls -d dist/release/pftww_windows_$${arch}_*/ | head -n 1); \
+		$(GO) run ./internal/wheel/cmd -version $(VERSION) -platform $$arch -pftw $${manager}pftw.exe -pftww $${windowed}pftww.exe -out dist/wheels; \
+	done
+
+# Documentation site (MkDocs, published on Read the Docs). Python 3.13 matches .readthedocs.yaml and
+# has published wheels for every pinned dependency; nothing is built from source.
+MKDOCS ?= uvx --no-build --python 3.13 --with-requirements docs/requirements.txt mkdocs
+.PHONY: docs-check docs-serve
+docs-check:
+	$(MKDOCS) build --strict --site-dir dist/site
+docs-serve:
+	$(MKDOCS) serve

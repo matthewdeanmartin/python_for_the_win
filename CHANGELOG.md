@@ -6,42 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- README reduced to installation and usage; advanced material moved to `docs/`, including a scripting guide.
-- Executable offline bundles with read-only embedded sources and standalone installed managers.
-- `pftw mirror SPEC... --out DIR` for self-hostable indexes and verified runtime ZIPs.
-- Last-resort read-only Windows static-proxy fallback; PAC/WPAD remain unsupported.
-- Inactive SignPath workflow draft and owner onboarding instructions.
-- Global `--dry-run` / `--dry-mode`, including previews without cache/log/lock writes.
-- Runner with explicit, shebang and inline-metadata selection; verified offline ZIP bundles.
-- Conservative `doctor --fix`, Restart Manager process diagnostics and optional windowed Python shims.
-- Wizard Previous navigation, separated button rows and browser-based Help.
-- `pftw gui` explicitly opens a Windows Gio window using the shared wizard state machine.
-- Verified official CPython ZIP installation, safe extraction, feed paging, explicit prerelease selection, portable roots, isolated Python/pip/venv checks, logs and transaction recovery (Sprint 1).
-- PATH consent and recovery, versioned Python commands, default selection, doctor and managed uninstall; Windows resources, native architecture detection and Git Bash terminal support (Sprint 2).
-- Terminal wizard with safe defaults, explicit PATH conflict decisions and collapsed advanced information.
-- Recoverable same-minor upgrades, copied packages/Scripts, `--fresh`, and interruption tests.
-- Checksum-verified self-update, Scoop detection, release packaging and generated CLI documentation (Sprint 3).
-- Install pftw with pip: `python -m pip install pftw`, then `python -m pftw install`. Windows wheels carry the same executables; `python -m pftw` works even when Scripts is not on PATH.
-- `make wheels VERSION=...` and `make wheels-check` build and test-install the PyPI wheels; release tags such as `v0.4.0-rc.1` become PEP 440 versions automatically.
-- `make changelog-check` validates this changelog with keepachangelog-manager, also in CI.
-- One-line install scripts: `irm .../install.ps1 | iex` (PowerShell) and `curl .../install.sh | bash` (Git Bash) fetch pftw from PyPI, verify its SHA-256 and start it; they never edit PATH themselves.
-
-### Fixed
-- Processes started by Python under `pftw run` or `python3.X` commands are no longer killed when Python exits.
-- With `--json`, failures write `{"error":{"code","kind","message"}}` to stderr instead of prose.
-- `install --json` (and `--target`) report `exe`, `version` and `key`.
-- `doctor` detail lines no longer print mis-encoded characters.
-- Unknown commands exit 2 (usage error) with a suggestion, as documented.
-- Terminal advanced-info hints appear only when usable and are removed when the wizard exits.
-- Installation roots below a symlinked folder (such as macOS /var or a redirected Windows profile folder) are accepted; links inside the root are still refused.
-- `make lint` checks Windows, Linux and macOS code, so OS-specific files are linted locally as in CI.
-- Tests no longer assume an x64 machine; they pass on Apple Silicon and ARM Windows.
-
-### Changed
-- Available versions select the most recent usable binary; unsupported entries explain exact reasons.
-- `py` and `pyw` remain entirely outside pftw's namespace. The launcher is `pftw run`.
-- `self-update` refuses for pip-installed copies (exit 3) and names the pip upgrade command.
-- Known limitations moved from the changelog to the documentation index.
-
-### Security
-- GitHub Actions are upgraded and pinned to commit SHAs; checkouts drop persisted credentials, release builds skip the Go cache, and release permissions are scoped to the job. `make workflows-check` runs actionlint and zizmor.
+- Install wizard: double-click `pftw.exe` and press Enter until done to get the newest official Python with pip, for your user only. No administrator rights, Microsoft Store, MSI, registry entries (other than your PATH) or Program Files. Works in the terminal or as a graphical window (`pftw gui`).
+- Official, verified Python: downloads python.org's own Windows builds and checks each download's SHA-256 before use. Each install is checked to run Python, pip and venv before it's reported as finished.
+- Several Pythons side by side: `pftw install 3.14`, exact versions, pre-releases on request, free-threaded builds, and 64-bit, ARM64 or 32-bit. `pftw list --available` shows what can be installed.
+- PATH that asks first: Python goes on PATH by default, but pftw asks before taking over from another Python and never changes the system PATH. Every install also gets versioned commands such as `python3.14`. `pftw default` chooses which version `python` means.
+- `pftw run`: run a script with the right Python, chosen from `--python`, the script's shebang, its inline `requires-python` metadata, a `.python-version` file, or the default. `pftw which` prints an interpreter's path.
+- Upgrades and removal: `pftw upgrade` moves to the newest patch release, keeping installed packages, and rolls back if anything fails. `pftw uninstall` removes only what pftw created.
+- `pftw doctor` explains which `python`, `pip` and `py` a new terminal will run, and `pftw doctor --fix` restores missing pftw commands and PATH entries.
+- Portable and plain installs: keep everything in one folder with `--portable --root DIR`, or extract a plain Python folder with `--target DIR`.
+- Offline and company networks: offline installers as a ZIP or a single exe (`pftw bundle`), self-hosted mirrors (`pftw mirror`), a configurable download source, and proxy support, including your Windows proxy setting.
+- Preview anything: every command accepts `--dry-run` to show what it would change without changing it.
+- Scripting and automation: `--json` output (including errors), documented exit codes, and no prompts when there's no terminal.
+- Ways to get pftw: a single exe, Scoop, `pip install pftw` (then `python -m pftw`), one-line install scripts for PowerShell and Git Bash, or `go install`. `pftw self-update` updates a downloaded copy.
+- Documentation site with troubleshooting for the messages pftw shows and a list of exactly what pftw changes on your computer. Help in the installer opens it, and failure screens link straight to troubleshooting.

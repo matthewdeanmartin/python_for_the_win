@@ -151,9 +151,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, model tui.Model, bind f
 					}
 					if action.Key == "help" {
 						verb, _ := windows.UTF16PtrFromString("open")
-						url, _ := windows.UTF16PtrFromString(DocumentationURL)
+						destination := page.HelpURL
+						if destination == "" {
+							destination = DocumentationURL
+						}
+						url, _ := windows.UTF16PtrFromString(destination)
 						if err := windows.ShellExecute(0, verb, url, nil, nil, windows.SW_SHOWNORMAL); err != nil {
-							helpError = "Could not open Help. Visit " + DocumentationURL
+							helpError = "Could not open Help. Visit " + destination
 						}
 					} else {
 						press(action.Key)

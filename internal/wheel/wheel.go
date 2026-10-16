@@ -153,7 +153,7 @@ func Metadata(version string, readme []byte) []byte {
 		"Author: Matthew Dean Martin",
 		"License: MIT",
 		"Project-URL: Homepage, " + repository,
-		"Project-URL: Documentation, " + repository + "/tree/main/docs",
+		"Project-URL: Documentation, https://python-for-the-win.readthedocs.io/",
 		"Project-URL: Changelog, " + repository + "/blob/main/CHANGELOG.md",
 		"Classifier: Development Status :: 3 - Alpha",
 		"Classifier: Environment :: Console",

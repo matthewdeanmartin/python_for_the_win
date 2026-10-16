@@ -11,7 +11,7 @@ import (
 func main() {
 	s := wheel.Spec{}
 	out := flag.String("out", "dist/wheels", "output directory")
-	flag.StringVar(&s.Version, "version", "", "PEP 440 version, e.g. 0.3.0")
+	flag.StringVar(&s.Version, "version", "", "PEP 440 version, e.g. 0.1.0")
 	flag.StringVar(&s.Platform, "platform", "", "win_amd64, win_arm64 or win32 (or amd64, arm64, 386)")
 	flag.StringVar(&s.Manager, "pftw", "", "path to pftw.exe")
 	flag.StringVar(&s.Windowed, "pftww", "", "optional path to pftww.exe")

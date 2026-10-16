@@ -379,7 +379,7 @@ func (m Model) View() string {
 		case Done:
 			add("Python is ready.\n" + m.Result.Message + "\n\nEnter: finish")
 		case Failed:
-			add("[failed] Installation could not finish.\n" + m.Result.Err.Error() + "\nLog: " + m.LogPath + "\n\nEnter: quit")
+			add("[failed] Installation could not finish.\n" + m.Result.Err.Error() + "\nLog: " + m.LogPath + "\nTroubleshooting: " + TroubleshootingURL + "\n\nEnter: quit")
 		case Blocked:
 			message := "Installation paused; nothing new was installed."
 			if m.Prepared.Err != nil {
@@ -387,7 +387,7 @@ func (m Model) View() string {
 			} else if m.conflict == "AliasBlock" {
 				message = "A Python app execution alias takes precedence.\nTurn off that Python alias, or choose No for PATH."
 			}
-			add(message + "\nLog: " + m.LogPath + "\n\nR / Enter: recheck   Q: quit")
+			add(message + "\nLog: " + m.LogPath + "\nTroubleshooting: " + TroubleshootingURL + "\n\nR / Enter: recheck   Q: quit")
 		}
 	}
 	if m.PreviousAvailable() {
