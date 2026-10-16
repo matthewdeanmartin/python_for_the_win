@@ -25,6 +25,15 @@ Your existing Python is not changed or removed. Because it's already on PATH, pf
 
 Update pftw later with `python -m pip install --upgrade pftw`. See [the PyPI package notes](pypi.md).
 
+## Using Scoop?
+
+```powershell
+scoop bucket add pftw https://github.com/matthewdeanmartin/python_for_the_win
+scoop install pftw/pftw
+```
+
+Then run `pftw` as usual. See [Scoop](scoop.md) for how updates work.
+
 ## Wizard, GUI or command line
 
 - `pftw` with no arguments opens the terminal wizard when run from a terminal. Launched from Explorer, it

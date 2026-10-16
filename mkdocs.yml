@@ -41,6 +41,7 @@ nav:
       - "Development": "development.md"
       - "Releasing": "releasing.md"
       - "PyPI package": "pypi.md"
+      - "Scoop": "scoop.md"
       - "Dependency maintenance": "maintenance.md"
       - "Signing": "signing.md"
       - "Security": "security.md"
