@@ -88,13 +88,14 @@ KACLM ?= uvx --from keepachangelog-manager-fork==6.10.1 kaclm
 changelog-check:
 	$(KACLM) validate --strict
 
-# Workflow gate: actionlint plus zizmor (online audits use the gh login when available).
+# Reproducible workflow gate, including on untrusted PRs without credentials.
+# Also run zizmor online during maintenance to check remote action metadata.
 # Upgrade and re-pin actions first with: GITHUB_TOKEN=$$(gh auth token) gha-update
 ZIZMOR ?= uvx zizmor@1.31.0
 .PHONY: workflows-check
 workflows-check:
-	actionlint .github/workflows/*.yml
-	GH_TOKEN="$${GH_TOKEN:-$$(gh auth token 2>/dev/null)}" $(ZIZMOR) .github/workflows
+	$(GO) run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/*.yml
+	$(ZIZMOR) --offline .github/workflows
 
 # Release wheels wrap goreleaser's binaries (dist/release), so PyPI and the GitHub release ship
 # identical executables: make release-wheels VERSION=0.1.0 (the tag; v and semver pre-releases are fine).

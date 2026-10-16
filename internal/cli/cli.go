@@ -355,11 +355,6 @@ func (o *options) install(c *cobra.Command, a []string) error {
 				return err
 			}
 		}
-		if o.source != "" && source != feed.DefaultSource {
-			if _, err := fmt.Fprintln(c.ErrOrStderr(), "Whoever controls the source controls what gets installed."); err != nil {
-				return err
-			}
-		}
 		if !o.quiet && platform.IsTerminal(os.Stderr) {
 			last := -1
 			d.Progress = func(done, total int64) {
@@ -574,11 +569,6 @@ func (o *options) config(c *cobra.Command, a []string) error {
 				}
 				if _, e = it.Next(c.Context()); e != nil {
 					return e
-				}
-				if value != feed.DefaultSource {
-					if _, err := fmt.Fprintln(c.ErrOrStderr(), "Whoever controls the source controls what gets installed."); err != nil {
-						return err
-					}
 				}
 			} else {
 				if _, e = download.New(value, o.insecure); e != nil {

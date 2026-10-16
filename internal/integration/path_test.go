@@ -5,8 +5,43 @@ import (
 	"github.com/matthewdeanmartin/python_for_the_win/internal/state"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+type truncatingStore struct{ envpath.MemStore }
+
+func (s *truncatingStore) Set(v envpath.Value) error {
+	v.Text = v.Text[:1024]
+	s.Value = v
+	return nil
+}
+
+func TestTruncatedWriteNotCommitted(t *testing.T) {
+	r := t.TempDir()
+	s := state.New()
+	s.Default = "3.15-64"
+	original := envpath.Value{Text: strings.Repeat(`C:\Tools;`, 2000) + "TAIL", Kind: 2, Exists: true}
+	store := &truncatingStore{envpath.MemStore{Value: original}}
+	err := Apply(r, s, store, true)
+	if err == nil || !strings.Contains(err.Error(), "read-back") {
+		t.Fatalf("truncated write not detected: %v", err)
+	}
+	if s.Path().Mode == "first" {
+		t.Fatal("failed write committed to state")
+	}
+	if _, err := os.Stat(filepath.Join(r, "path-transaction.json")); err != nil {
+		t.Fatal("missing recovery journal", err)
+	}
+	backups, err := filepath.Glob(filepath.Join(r, "logs", "path-backup-*.txt"))
+	if err != nil || len(backups) != 1 {
+		t.Fatalf("missing backup: %v %v", backups, err)
+	}
+	b, err := os.ReadFile(backups[0])
+	if err != nil || string(b) != original.Text {
+		t.Fatal("original PATH not preserved in backup", err)
+	}
+}
 
 func TestLifecyclePreservesExternalEdits(t *testing.T) {
 	r := t.TempDir()

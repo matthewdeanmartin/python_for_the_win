@@ -43,6 +43,7 @@ nav:
       - "PyPI package": "pypi.md"
       - "Dependency maintenance": "maintenance.md"
       - "Signing": "signing.md"
+      - "Security": "security.md"
       - "TODO": "TODO.md"
 
 validation:

@@ -5,6 +5,7 @@ package envpath
 import (
 	"golang.org/x/sys/windows/registry"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -22,7 +23,7 @@ func TestScratchRegistry(t *testing.T) {
 	t.Cleanup(func() { _ = registry.DeleteKey(registry.CURRENT_USER, path) })
 	s := RegistryStore{registry.CURRENT_USER, path, "Path"}
 	for _, kind := range []uint32{registry.SZ, registry.EXPAND_SZ} {
-		want := Value{`%USERPROFILE%\bin;;C:\Tools;`, kind, true}
+		want := Value{strings.Repeat(`C:\Tools\工具;`, 2000) + `%USERPROFILE%\bin;;TAIL;`, kind, true}
 		if e = s.Set(want); e != nil {
 			t.Fatal(e)
 		}

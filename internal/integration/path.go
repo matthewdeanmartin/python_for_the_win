@@ -138,6 +138,14 @@ func Apply(root string, s *state.State, store envpath.Store, enable bool) error 
 	if e = store.Set(after); e != nil {
 		return e
 	}
+	current, e = store.Get()
+	if e != nil {
+		return fmt.Errorf("cannot verify PATH write; recovery journal retained: %w", e)
+	}
+	if current != after {
+		// Do not blindly restore: another process may have edited PATH since our write.
+		return fmt.Errorf("PATH read-back differs from the intended value; recovery journal retained, no further PATH changes made")
+	}
 	logger.Print("PATH write succeeded")
 	s.SetPath(next)
 	if e = s.Save(root); e != nil {

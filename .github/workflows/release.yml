@@ -66,6 +66,9 @@ jobs:
         with:
           go-version: '1.27.2'
           cache: false # Release artifacts must not depend on a poisonable cache.
+      - run: go mod verify
+      - run: make security
+      - run: go vet ./...
       - run: go test ./...
       - uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:

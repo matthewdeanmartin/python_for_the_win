@@ -19,6 +19,16 @@ import (
 
 const DefaultSource = "https://www.python.org/ftp/python/index-windows.json"
 
+const maxIndexBytes = 16 << 20
+
+func readIndex(r io.Reader) ([]byte, error) {
+	data, err := io.ReadAll(io.LimitReader(r, maxIndexBytes+1))
+	if err == nil && len(data) > maxIndexBytes {
+		err = fmt.Errorf("index exceeds size limit")
+	}
+	return data, err
+}
+
 type Alias struct {
 	Name     string `json:"name"`
 	Target   string `json:"target"`
@@ -171,7 +181,14 @@ func (i *Iterator) Next(ctx context.Context) ([]Entry, error) {
 	var e error
 	if i.pages == 1 && !i.Refresh && i.Cache != "" {
 		if info, err := os.Stat(cache); err == nil && time.Since(info.ModTime()) < time.Hour {
-			data, _ = os.ReadFile(cache)
+			f, err := os.Open(cache)
+			if err == nil {
+				data, err = readIndex(f)
+				_ = f.Close() // Read-only cache; failed reads fall back to the source.
+				if err != nil {
+					data = nil
+				}
+			}
 		}
 	}
 	if data == nil {
@@ -184,13 +201,10 @@ func (i *Iterator) Next(ctx context.Context) ([]Entry, error) {
 			}
 			return nil, errs.Wrap(5, "cannot read Python index", err)
 		}
-		data, e = io.ReadAll(io.LimitReader(r, (16<<20)+1))
+		data, e = readIndex(r)
 		_ = r.Close() // Read-only or already-failed operation; preserve the primary error.
 		if e != nil {
 			return nil, e
-		}
-		if len(data) > 16<<20 {
-			return nil, fmt.Errorf("index exceeds size limit")
 		}
 	}
 	var idx Index

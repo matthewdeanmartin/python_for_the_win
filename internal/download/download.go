@@ -20,6 +20,10 @@ import (
 
 var ErrIntegrity = errors.New("integrity check failed")
 
+// MaxArchiveBytes bounds disk usage even when a server omits Content-Length.
+// This matches the extractor's total expansion budget.
+const MaxArchiveBytes int64 = 4 << 30
+
 type Client struct {
 	HTTP     *http.Client
 	Insecure bool
@@ -130,6 +134,10 @@ func (m *meter) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 func (c *Client) Fetch(ctx context.Context, source, hash, cache string) (path string, resultErr error) {
+	return c.fetch(ctx, source, hash, cache, MaxArchiveBytes)
+}
+
+func (c *Client) fetch(ctx context.Context, source, hash, cache string, limit int64) (path string, resultErr error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
@@ -155,6 +163,9 @@ func (c *Client) Fetch(ctx context.Context, source, hash, cache string) (path st
 		return "", errs.Wrap(5, "cannot read runtime", e)
 	}
 	defer func() { _ = r.Close() }() // Read-only handle; read errors are checked above.
+	if total > limit {
+		return "", errs.Wrap(6, "runtime exceeds download size limit", ErrIntegrity)
+	}
 	f, e := os.CreateTemp(cache, "download-*.part")
 	if e != nil {
 		return "", e
@@ -166,7 +177,10 @@ func (c *Client) Fetch(ctx context.Context, source, hash, cache string) (path st
 		}
 	}()
 	h := sha256.New()
-	_, e = io.Copy(io.MultiWriter(f, h, &meter{total: total, f: c.Progress}), contextReader{ctx: ctx, r: r})
+	n, e := io.Copy(io.MultiWriter(f, h, &meter{total: total, f: c.Progress}), io.LimitReader(contextReader{ctx: ctx, r: r}, limit+1))
+	if e == nil && n > limit {
+		e = errs.Wrap(6, "runtime exceeds download size limit", ErrIntegrity)
+	}
 	if e == nil {
 		e = ctx.Err()
 	}
@@ -178,6 +192,9 @@ func (c *Client) Fetch(ctx context.Context, source, hash, cache string) (path st
 		e = ce
 	}
 	if e != nil {
+		if errors.Is(e, ErrIntegrity) {
+			return "", e
+		}
 		return "", errs.Wrap(5, "incomplete download", e)
 	}
 	if !strings.EqualFold(hex.EncodeToString(h.Sum(nil)), hash) {

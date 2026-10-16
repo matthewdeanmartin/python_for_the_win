@@ -6,7 +6,7 @@ import (
 )
 
 func TestPreservePath(t *testing.T) {
-	for _, value := range []string{`C:\Other;%USERPROFILE%\bin;`, "", `;C:\Other;;`, strings.Repeat("x", 4000)} {
+	for _, value := range []string{`C:\Other;%USERPROFILE%\bin;`, "", `;C:\Other;;`, strings.Repeat("x", 4000), strings.Repeat(`C:\Tools\工具;`, 2000) + `%USERPROFILE%\bin;;TAIL;`} {
 		entries := []string{`C:\pftw\versions\3.15-64`, `C:\pftw\shims`}
 		added := AddFront(value, entries)
 		if got := Remove(added, entries); got != value {
