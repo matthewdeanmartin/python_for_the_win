@@ -33,3 +33,6 @@ go.work.sum
 # .vscode/
 
 /dist/
+/landing/public/
+/landing/resources/
+/landing/.hugo_build.lock

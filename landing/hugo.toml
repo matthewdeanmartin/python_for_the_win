@@ -1,0 +1,10 @@
+baseURL = "https://matthewdeanmartin.github.io/python_for_the_win/"
+locale = "en-us"
+title = "Python for the Win — your Python, your Windows"
+disableKinds = ["taxonomy", "term", "RSS"]
+
+[params]
+  description = "Install official Python for your Windows user, choose versions, and see exactly what changes."
+  docs = "https://python-for-the-win.readthedocs.io/en/latest/"
+  github = "https://github.com/matthewdeanmartin/python_for_the_win"
+  pypi = "https://pypi.org/project/pftw/"

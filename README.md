@@ -73,16 +73,16 @@ Something not working? Run `pftw doctor`, then see [Troubleshooting](https://git
 
 ## Everything else
 
-The [documentation](https://python-for-the-win.readthedocs.io/) ([source](https://github.com/matthewdeanmartin/python_for_the_win/blob/docs/index.md)) covers the rest, including:
+The [homepage](https://matthewdeanmartin.github.io/python_for_the_win/) introduces pftw. The [documentation](https://python-for-the-win.readthedocs.io/) ([source](https://github.com/matthewdeanmartin/python_for_the_win/blob/main/docs/index.md)) covers the rest, including:
 
-- [Choosing versions, PATH, portable installs](https://github.com/matthewdeanmartin/python_for_the_win/blob/docs/installing.md)
-- [Switching, running, upgrading and removing Pythons](https://github.com/matthewdeanmartin/python_for_the_win/blob/docs/everyday-commands.md)
-- [Offline installers, mirrors and proxies](https://github.com/matthewdeanmartin/python_for_the_win/blob/docs/offline-and-mirrors.md)
-- [Scripting, CI and AI agents](https://github.com/matthewdeanmartin/python_for_the_win/blob/docs/scripting.md)
-- [Every command and flag](https://github.com/matthewdeanmartin/python_for_the_win/blob/docs/cli.md)
-- [Troubleshooting](https://github.com/matthewdeanmartin/python_for_the_win/blob/docs/troubleshooting/index.md) and [what pftw changes on your computer](https://github.com/matthewdeanmartin/python_for_the_win/blob/docs/reference/what-pftw-changes.md)
+- [Choosing versions, PATH, portable installs](https://github.com/matthewdeanmartin/python_for_the_win/blob/main/docs/installing.md)
+- [Switching, running, upgrading and removing Pythons](https://github.com/matthewdeanmartin/python_for_the_win/blob/main/docs/everyday-commands.md)
+- [Offline installers, mirrors and proxies](https://github.com/matthewdeanmartin/python_for_the_win/blob/main/docs/offline-and-mirrors.md)
+- [Scripting, CI and AI agents](https://github.com/matthewdeanmartin/python_for_the_win/blob/main/docs/scripting.md)
+- [Every command and flag](https://github.com/matthewdeanmartin/python_for_the_win/blob/main/docs/cli.md)
+- [Troubleshooting](https://github.com/matthewdeanmartin/python_for_the_win/blob/main/docs/troubleshooting/index.md) and [what pftw changes on your computer](https://github.com/matthewdeanmartin/python_for_the_win/blob/main/docs/reference/what-pftw-changes.md)
 
-Why this exists: [motivation](https://github.com/matthewdeanmartin/python_for_the_win/blob/spec/motivation.md).
+Why this exists: [motivation](https://github.com/matthewdeanmartin/python_for_the_win/blob/main/spec/motivation.md).
 
 ## License
 

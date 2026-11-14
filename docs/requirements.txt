@@ -1,4 +1,5 @@
 # Docs build dependencies for Read the Docs and `make docs`; all published wheels.
+--only-binary=:all:
 # Regenerate: uv pip compile --only-binary :all: --python-version 3.13 --python-platform linux (input: mkdocs==1.6.1)
 click==8.5.0
 ghp-import==2.1.0

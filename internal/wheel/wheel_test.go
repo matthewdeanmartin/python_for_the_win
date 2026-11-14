@@ -67,7 +67,7 @@ func TestBuildProducesInstallableLayout(t *testing.T) {
 		t.Error(files["pftw-0.3.0.dist-info/WHEEL"])
 	}
 	meta := files["pftw-0.3.0.dist-info/METADATA"]
-	if !strings.Contains(meta, "Name: pftw\nVersion: 0.3.0\n") || !strings.Contains(meta, "/blob/main/docs/README.md)") || !strings.Contains(meta, "(https://example.com)") {
+	if !strings.Contains(meta, "Name: pftw\nVersion: 0.3.0\n") || !strings.Contains(meta, "Project-URL: Homepage, https://matthewdeanmartin.github.io/python_for_the_win/\n") || !strings.Contains(meta, "Project-URL: Source, "+repository+"\n") || !strings.Contains(meta, "/blob/main/docs/README.md)") || !strings.Contains(meta, "(https://example.com)") {
 		t.Error(meta)
 	}
 	// Every entry except RECORD itself is listed with a correct hash and size.
